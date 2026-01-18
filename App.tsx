@@ -51,7 +51,7 @@ const DEFAULT_CONTENT = {
     productName: "The Novari Elite",
     currentPrice: 42500,
     oldPrice: 85000,
-    whatsappNumber: "2348000000000",
+    whatsappNumber: "09013359052",
     orderMessage: "Hello Novari! I want to order the Novari Elite Watch set for ₦42,500. Please take my order.",
     stockCount: 7
   },
@@ -200,32 +200,6 @@ const App: React.FC = () => {
   const addLead = (newLead: Lead) => setLeads(prev => [newLead, ...prev]);
   const updateLeads = (updatedLeads: Lead[]) => setLeads(updatedLeads);
 
-  if (showAdmin) {
-    if (!isAuthenticated) {
-      return (
-        <AdminLogin 
-          correctPassword={content.settings?.adminPassword || "Engineer@2021"} 
-          onSuccess={() => setIsAuthenticated(true)} 
-          onCancel={() => setShowAdmin(false)} 
-        />
-      );
-    }
-    return (
-      <AdminDashboard 
-        content={content} 
-        userLocation={userLocation}
-        leads={leads}
-        onLeadsUpdate={updateLeads}
-        onSave={updateContent} 
-        onClose={() => setShowAdmin(false)} 
-        onLogout={() => {
-          setIsAuthenticated(false);
-          setShowAdmin(false);
-        }}
-      />
-    );
-  }
-
   return (
     <div className="min-h-screen relative bg-slate-50 dark:bg-black text-zinc-900 dark:text-white transition-colors duration-300">
       <ThemeToggle theme={theme} onToggle={toggleTheme} />
@@ -238,46 +212,71 @@ const App: React.FC = () => {
         <i className="fa-solid fa-lock"></i>
       </button>
       
-      <Hero 
-        timeLeft={timeLeft} 
-        onOrderClick={() => setIsModalOpen(true)} 
-        data={content.hero} 
-      />
-      <ProductShowcase specs={content.products} media={content.media} />
-      <Benefits items={content.benefits} />
-      <Scarcity 
-        timeLeft={timeLeft} 
-        stock={content.pricing.stockCount} 
-        userCity={userLocation?.city}
-      />
-      <Testimonials reviews={content.testimonials} />
-      <Pricing 
-        onOrderClick={() => setIsModalOpen(true)} 
-        data={content.pricing} 
-      />
-      <Trust />
-      <FAQ items={content.faqs} />
-      <WhatsAppOrder whatsappNumber={content.pricing.whatsappNumber} />
-      
-      <footer className="bg-zinc-100 dark:bg-zinc-900 py-12 px-4 text-center border-t border-zinc-200 dark:border-zinc-800">
-        <div className="flex flex-col items-center mb-6">
-          <p className="font-serif text-3xl tracking-[0.2em] mb-1">NOVARI</p>
-          <div className="w-16 h-[1px] bg-zinc-400 dark:bg-zinc-600 mb-2"></div>
-          <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">Mark Your Moment.</p>
-        </div>
-        <p className="text-zinc-500 text-sm">© 2025 Novari Nigeria. All rights reserved.</p>
-      </footer>
+      {showAdmin ? (
+        isAuthenticated ? (
+          <AdminDashboard 
+            content={content} 
+            userLocation={userLocation}
+            leads={leads}
+            onLeadsUpdate={updateLeads}
+            onSave={updateContent} 
+            onClose={() => setShowAdmin(false)} 
+            onLogout={() => {
+              setIsAuthenticated(false);
+              setShowAdmin(false);
+            }}
+          />
+        ) : (
+          <AdminLogin 
+            correctPassword={content.settings?.adminPassword || "Engineer@2021"} 
+            onSuccess={() => setIsAuthenticated(true)} 
+            onCancel={() => setShowAdmin(false)} 
+          />
+        )
+      ) : (
+        <>
+          <Hero 
+            timeLeft={timeLeft} 
+            onOrderClick={() => setIsModalOpen(true)} 
+            data={content.hero} 
+          />
+          <ProductShowcase specs={content.products} media={content.media} />
+          <Benefits items={content.benefits} />
+          <Scarcity 
+            timeLeft={timeLeft} 
+            stock={content.pricing.stockCount} 
+            userCity={userLocation?.city}
+          />
+          <Testimonials reviews={content.testimonials} />
+          <Pricing 
+            onOrderClick={() => setIsModalOpen(true)} 
+            data={content.pricing} 
+          />
+          <Trust />
+          <FAQ items={content.faqs} />
+          <WhatsAppOrder whatsappNumber={content.pricing.whatsappNumber} />
+          
+          <footer className="bg-zinc-100 dark:bg-zinc-900 py-12 px-4 text-center border-t border-zinc-200 dark:border-zinc-800">
+            <div className="flex flex-col items-center mb-6">
+              <p className="font-serif text-3xl tracking-[0.2em] mb-1">NOVARI</p>
+              <div className="w-16 h-[1px] bg-zinc-400 dark:bg-zinc-600 mb-2"></div>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">Mark Your Moment.</p>
+            </div>
+            <p className="text-zinc-500 text-sm">© 2025 Novari Nigeria. All rights reserved.</p>
+          </footer>
 
-      <StickyCTA onOrderClick={() => setIsModalOpen(true)} price={content.pricing.currentPrice} />
-      <WhatsAppFloating whatsappNumber={content.pricing.whatsappNumber} />
-      <OrderFormModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        whatsappNumber={content.pricing.whatsappNumber} 
-        currentPrice={content.pricing.currentPrice}
-        userLocation={userLocation}
-        onCaptureLead={addLead}
-      />
+          <StickyCTA onOrderClick={() => setIsModalOpen(true)} price={content.pricing.currentPrice} />
+          <WhatsAppFloating whatsappNumber={content.pricing.whatsappNumber} />
+          <OrderFormModal 
+            isOpen={isModalOpen} 
+            onClose={() => setIsModalOpen(false)} 
+            whatsappNumber={content.pricing.whatsappNumber} 
+            currentPrice={content.pricing.currentPrice}
+            userLocation={userLocation}
+            onCaptureLead={addLead}
+          />
+        </>
+      )}
     </div>
   );
 };
