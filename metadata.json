@@ -1,7 +1,5 @@
 {
   "name": "Novari",
   "description": "A high-converting, premium wristwatch landing page designed for the Nigerian market, featuring urgency, social proof, and luxury aesthetics.",
-  "requestFramePermissions": [
-    "geolocation"
-  ]
+  "requestFramePermissions": []
 }
