@@ -27,7 +27,11 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsa
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const total = currentPrice * parseInt(formData.quantity);
+    
+    // Calculate actual total based on the selected quantity and its specific discount
+    let total = currentPrice;
+    if (formData.quantity === '2') total = Math.floor(currentPrice * 1.8);
+    if (formData.quantity === '3') total = Math.floor(currentPrice * 2.5);
     
     // Create Lead Object for CRM
     const newLead = {
@@ -65,9 +69,18 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsa
 ---
 Please confirm my order. Mark my moment!`;
 
-    // WhatsApp Redirect
-    window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
-    onClose();
+    // Sanitize and format WhatsApp Number for API (International Format: 234...)
+    const cleanNumber = whatsappNumber.replace(/\D/g, '');
+    const finalNumber = cleanNumber.startsWith('0') ? '234' + cleanNumber.substring(1) : cleanNumber;
+
+    // Use window.location.href for better compatibility with mobile in-app browsers
+    const whatsappUrl = `https://wa.me/${finalNumber}?text=${encodeURIComponent(message)}`;
+    
+    // We attempt window.location.href first as it's the most reliable on mobile
+    window.location.href = whatsappUrl;
+    
+    // Fallback/Safety: Close the modal after a small delay to allow the redirect to trigger
+    setTimeout(onClose, 500);
   };
 
   return (
@@ -111,8 +124,8 @@ Please confirm my order. Mark my moment!`;
               <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Quantity</label>
               <select name="quantity" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-gold transition-all" value={formData.quantity} onChange={handleChange}>
                 <option value="1">1 Piece (₦{currentPrice.toLocaleString()})</option>
-                <option value="2">2 Pieces (₦{(currentPrice * 1.8).toLocaleString()})</option>
-                <option value="3">3 Pieces (₦{(currentPrice * 2.5).toLocaleString()})</option>
+                <option value="2">2 Pieces (₦{Math.floor(currentPrice * 1.8).toLocaleString()})</option>
+                <option value="3">3 Pieces (₦{Math.floor(currentPrice * 2.5).toLocaleString()})</option>
               </select>
             </div>
           </div>

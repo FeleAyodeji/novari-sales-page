@@ -6,8 +6,11 @@ interface WhatsAppOrderProps {
 }
 
 const WhatsAppOrder: React.FC<WhatsAppOrderProps> = ({ whatsappNumber }) => {
+  const cleanNumber = whatsappNumber.replace(/\D/g, '');
+  const finalNumber = cleanNumber.startsWith('0') ? '234' + cleanNumber.substring(1) : cleanNumber;
+
   const message = encodeURIComponent("Hello Novari! I'm interested in the Novari Elite Watch Anniversary Offer. Please guide me on how to complete my order.");
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+  const whatsappUrl = `https://wa.me/${finalNumber}?text=${message}`;
 
   return (
     <section className="py-16 bg-zinc-900 border-t border-zinc-800 px-4">

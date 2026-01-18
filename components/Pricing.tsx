@@ -12,8 +12,11 @@ interface PricingProps {
 }
 
 const Pricing: React.FC<PricingProps> = ({ onOrderClick, data }) => {
+  const cleanNumber = data.whatsappNumber.replace(/\D/g, '');
+  const finalNumber = cleanNumber.startsWith('0') ? '234' + cleanNumber.substring(1) : cleanNumber;
+
   const message = encodeURIComponent(`Hello Novari! I want to order the ${data.productName} set for ₦${data.currentPrice.toLocaleString()}. Please take my order.`);
-  const whatsappUrl = `https://wa.me/${data.whatsappNumber}?text=${message}`;
+  const whatsappUrl = `https://wa.me/${finalNumber}?text=${message}`;
 
   return (
     <section id="order" className="py-24 bg-zinc-900/20 px-4">

@@ -6,8 +6,11 @@ interface WhatsAppFloatingProps {
 }
 
 const WhatsAppFloating: React.FC<WhatsAppFloatingProps> = ({ whatsappNumber }) => {
+  const cleanNumber = whatsappNumber.replace(/\D/g, '');
+  const finalNumber = cleanNumber.startsWith('0') ? '234' + cleanNumber.substring(1) : cleanNumber;
+
   const message = encodeURIComponent("Hi Novari, I have a question about the Novari Elite watch.");
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+  const whatsappUrl = `https://wa.me/${finalNumber}?text=${message}`;
 
   return (
     <a 
