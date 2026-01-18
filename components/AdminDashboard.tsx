@@ -243,20 +243,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                 <p className="text-sm text-zinc-400">Manage all visual assets and page sections in one place.</p>
               </div>
 
-              {/* Product Identity */}
+              {/* Store Identity & Contact */}
               <section className="space-y-6">
                 <div className="flex items-center gap-3">
-                  <i className="fa-solid fa-tag text-gold"></i>
-                  <h3 className="text-lg font-bold uppercase tracking-widest">Product Identity</h3>
+                  <i className="fa-solid fa-store text-gold"></i>
+                  <h3 className="text-lg font-bold uppercase tracking-widest">Store Identity & Contact</h3>
                 </div>
-                <div className="bg-zinc-50 border p-6 rounded-3xl">
-                   <label className="block text-[10px] font-black uppercase text-zinc-400 mb-2 tracking-widest">Primary Product Name</label>
-                   <input 
-                    value={formData.pricing.productName} 
-                    onChange={(e) => handlePricingChange('productName', e.target.value)}
-                    placeholder="e.g. Novari Elite Gen 3"
-                    className="w-full bg-white border border-zinc-200 p-4 rounded-xl font-bold focus:ring-2 ring-gold outline-none transition-all"
-                   />
+                <div className="bg-zinc-50 border p-6 rounded-3xl grid md:grid-cols-2 gap-6">
+                   <div>
+                      <label className="block text-[10px] font-black uppercase text-zinc-400 mb-2 tracking-widest">Primary Product Name</label>
+                      <input 
+                        value={formData.pricing.productName} 
+                        onChange={(e) => handlePricingChange('productName', e.target.value)}
+                        placeholder="e.g. Novari Elite Gen 3"
+                        className="w-full bg-white border border-zinc-200 p-4 rounded-xl font-bold focus:ring-2 ring-gold outline-none transition-all"
+                      />
+                   </div>
+                   <div>
+                      <label className="block text-[10px] font-black uppercase text-zinc-400 mb-2 tracking-widest">Sales WhatsApp Number</label>
+                      <input 
+                        value={formData.pricing.whatsappNumber} 
+                        onChange={(e) => handlePricingChange('whatsappNumber', e.target.value)}
+                        placeholder="e.g. 2348000000000"
+                        className="w-full bg-white border border-zinc-200 p-4 rounded-xl font-bold focus:ring-2 ring-gold outline-none transition-all"
+                      />
+                   </div>
                 </div>
               </section>
 

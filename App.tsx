@@ -265,7 +265,7 @@ const App: React.FC = () => {
           <div className="w-16 h-[1px] bg-zinc-400 dark:bg-zinc-600 mb-2"></div>
           <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">Mark Your Moment.</p>
         </div>
-        <p className="text-zinc-500 text-sm">© 2024 Novari Nigeria. All rights reserved.</p>
+        <p className="text-zinc-500 text-sm">© 2025 Novari Nigeria. All rights reserved.</p>
       </footer>
 
       <StickyCTA onOrderClick={() => setIsModalOpen(true)} price={content.pricing.currentPrice} />
