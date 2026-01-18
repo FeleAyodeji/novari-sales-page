@@ -7,11 +7,13 @@ interface OrderFormModalProps {
   whatsappNumber: string;
   currentPrice: number;
   userLocation: any;
+  onCaptureLead: (lead: any) => void;
 }
 
-const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsappNumber, currentPrice, userLocation }) => {
+const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsappNumber, currentPrice, userLocation, onCaptureLead }) => {
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     phone: '',
     address: '',
     quantity: '1'
@@ -27,8 +29,24 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsa
     e.preventDefault();
     const total = currentPrice * parseInt(formData.quantity);
     
+    // Create Lead Object for CRM
+    const newLead = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      address: formData.address,
+      quantity: formData.quantity,
+      location: userLocation,
+      timestamp: Date.now(),
+      status: 'New'
+    };
+
+    // Capture in CRM
+    onCaptureLead(newLead);
+
     const locationString = userLocation 
-      ? `${userLocation.city}, ${userLocation.region}, ${userLocation.country} (IP: ${userLocation.ip})` 
+      ? `${userLocation.city}, ${userLocation.region}, ${userLocation.country}` 
       : 'Location data unavailable';
 
     const message = `*NEW ORDER FROM NOVARI WEBSITE* 🚀
@@ -39,14 +57,15 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsa
 ---
 *CUSTOMER DETAILS*
 *Name:* ${formData.name}
+*Email:* ${formData.email}
 *Phone:* ${formData.phone}
 *Address:* ${formData.address}
 ---
-*VISITOR INSIGHTS* 📍
-*Detected Location:* ${locationString}
+*LOCATION:* ${locationString}
 ---
-Please confirm my order and send payment details. Mark my moment!`;
+Please confirm my order. Mark my moment!`;
 
+    // WhatsApp Redirect
     window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
     onClose();
   };
@@ -65,7 +84,7 @@ Please confirm my order and send payment details. Mark my moment!`;
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-5">
+        <form onSubmit={handleSubmit} className="p-8 space-y-4">
           <div className="bg-zinc-800/30 p-3 rounded-xl border border-zinc-800 flex items-center gap-3">
             <i className="fa-solid fa-location-dot gold-text"></i>
             <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-widest">
@@ -74,18 +93,23 @@ Please confirm my order and send payment details. Mark my moment!`;
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Full Name</label>
-            <input required name="name" placeholder="e.g. Kolawole Chinedu" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-4 text-white outline-none focus:border-gold transition-all" value={formData.name} onChange={handleChange} />
+            <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Full Name</label>
+            <input required name="name" placeholder="e.g. Kolawole Chinedu" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-gold transition-all" value={formData.name} onChange={handleChange} />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Email Address</label>
+            <input required type="email" name="email" placeholder="email@example.com" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-gold transition-all" value={formData.email} onChange={handleChange} />
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Phone</label>
-              <input required type="tel" name="phone" placeholder="080 123 4567" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-4 text-white outline-none focus:border-gold transition-all" value={formData.phone} onChange={handleChange} />
+              <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Phone</label>
+              <input required type="tel" name="phone" placeholder="080 123 4567" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-gold transition-all" value={formData.phone} onChange={handleChange} />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Quantity</label>
-              <select name="quantity" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-4 text-white outline-none focus:border-gold transition-all" value={formData.quantity} onChange={handleChange}>
+              <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Quantity</label>
+              <select name="quantity" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-gold transition-all" value={formData.quantity} onChange={handleChange}>
                 <option value="1">1 Piece (₦{currentPrice.toLocaleString()})</option>
                 <option value="2">2 Pieces (₦{(currentPrice * 1.8).toLocaleString()})</option>
                 <option value="3">3 Pieces (₦{(currentPrice * 2.5).toLocaleString()})</option>
@@ -94,11 +118,11 @@ Please confirm my order and send payment details. Mark my moment!`;
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Delivery Address</label>
-            <textarea required name="address" placeholder="Full Address" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-4 text-white outline-none h-24 resize-none focus:border-gold transition-all" value={formData.address} onChange={handleChange}></textarea>
+            <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Delivery Address</label>
+            <textarea required name="address" placeholder="Full Home/Office Address" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none h-20 resize-none focus:border-gold transition-all" value={formData.address} onChange={handleChange}></textarea>
           </div>
 
-          <button type="submit" className="w-full gold-bg text-black font-black py-6 rounded-xl text-lg shadow-xl hover:brightness-110 transition-all flex items-center justify-center gap-3">
+          <button type="submit" className="w-full gold-bg text-black font-black py-5 rounded-xl text-lg shadow-xl hover:brightness-110 transition-all flex items-center justify-center gap-3">
             <i className="fa-brands fa-whatsapp text-2xl"></i>
             SUBMIT VIA WHATSAPP
           </button>

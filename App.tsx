@@ -23,9 +23,23 @@ interface UserLocation {
   ip: string;
 }
 
+export interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  quantity: string;
+  location: UserLocation | null;
+  timestamp: number;
+  status: 'New' | 'Contacted' | 'Shipped' | 'Cancelled';
+}
+
 const DEFAULT_CONTENT = {
   settings: {
-    adminPassword: "Engineer@2021"
+    adminPassword: "Engineer@2021",
+    crmWebhookUrl: "",
+    autoFollowUpEnabled: true
   },
   hero: {
     headline: "Command Respect.",
@@ -58,6 +72,45 @@ const DEFAULT_CONTENT = {
     { icon: 'fa-battery-full', label: 'Japanese Quartz', value: '5-Year Battery' },
     { icon: 'fa-layer-group', label: 'Stainless Steel', value: '316L Grade' }
   ],
+  benefits: [
+    {
+      title: "Boost Your Confidence",
+      desc: "Nothing says 'I have arrived' like a Novari timepiece. Feel the surge of confidence when you check the time or shake a business partner's hand.",
+      img: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=1000&auto=format&fit=crop"
+    },
+    {
+      title: "Perfect For Every Occasion",
+      desc: "Whether you're wearing an Agbada for a traditional wedding or a bespoke suit for a corporate presentation, the Novari fits perfectly with your lifestyle.",
+      img: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?q=80&w=1000&auto=format&fit=crop"
+    },
+    {
+      title: "Built For The Long Run",
+      desc: "Made with industrial-grade 316L stainless steel. It won't rust, it won't fade, and it won't let you down. A legacy piece for years to come.",
+      img: "https://images.unsplash.com/photo-1542496658-e33a6d0d50f6?q=80&w=1000&auto=format&fit=crop"
+    }
+  ],
+  faqs: [
+    {
+      q: "How long does delivery take?",
+      a: "For Lagos and Abuja, we deliver within 24-48 hours. For other states in Nigeria, it typically takes 3-5 working days."
+    },
+    {
+      q: "Can I pay when I see the watch?",
+      a: "Yes! We offer Payment on Delivery (PoD) nationwide. You can inspect the watch to ensure it meets your expectations before making payment."
+    },
+    {
+      q: "Does it come with a box?",
+      a: "Absolutely. Every Sovereign Elite watch comes with our signature luxury padded box, user manual, and warranty card."
+    },
+    {
+      q: "What if the watch stops working?",
+      a: "We provide a 12-month mechanical warranty. If you experience any manufacturing defects, we will repair or replace it free of charge."
+    },
+    {
+      q: "Is it real water resistant?",
+      a: "Yes, it is rated at 3ATM (30 Meters). It is safe for rain, hand washing, and accidental splashes. We do not recommend swimming or diving with it."
+    }
+  ],
   testimonials: [
     { name: "Oluwaseun K.", location: "Lagos", text: "I was skeptical at first, but the quality is amazing. I wore it to my brother's wedding and everyone was asking where I got it. 10/10!", stars: 5 },
     { name: "Chinedu A.", location: "Abuja", text: "Delivery was fast. It took only 2 days to get to me in Abuja. The box it came in is also very luxury. Highly recommended.", stars: 5 },
@@ -71,6 +124,10 @@ const App: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 59, seconds: 59 });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [leads, setLeads] = useState<Lead[]>(() => {
+    const saved = localStorage.getItem('novari_leads');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [content, setContent] = useState(() => {
     const saved = localStorage.getItem('novari_content');
     return saved ? JSON.parse(saved) : DEFAULT_CONTENT;
@@ -80,7 +137,6 @@ const App: React.FC = () => {
     return localStorage.getItem('theme') as 'light' | 'dark' || 'dark';
   });
 
-  // Silent Geolocation Fetching
   useEffect(() => {
     const fetchLocation = async () => {
       try {
@@ -93,14 +149,12 @@ const App: React.FC = () => {
           ip: data.ip
         });
       } catch (error) {
-        console.error("Geolocation failed:", error);
         setUserLocation({ city: 'Lagos', region: 'Lagos State', country: 'Nigeria', ip: 'Unknown' });
       }
     };
     fetchLocation();
   }, []);
 
-  // Keyboard shortcut listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && e.key.toLowerCase() === 'a') {
@@ -114,6 +168,10 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('novari_content', JSON.stringify(content));
   }, [content]);
+
+  useEffect(() => {
+    localStorage.setItem('novari_leads', JSON.stringify(leads));
+  }, [leads]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -139,6 +197,8 @@ const App: React.FC = () => {
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const updateContent = (newContent: any) => setContent(newContent);
+  const addLead = (newLead: Lead) => setLeads(prev => [newLead, ...prev]);
+  const updateLeads = (updatedLeads: Lead[]) => setLeads(updatedLeads);
 
   if (showAdmin) {
     if (!isAuthenticated) {
@@ -154,6 +214,8 @@ const App: React.FC = () => {
       <AdminDashboard 
         content={content} 
         userLocation={userLocation}
+        leads={leads}
+        onLeadsUpdate={updateLeads}
         onSave={updateContent} 
         onClose={() => setShowAdmin(false)} 
         onLogout={() => {
@@ -182,7 +244,7 @@ const App: React.FC = () => {
         data={content.hero} 
       />
       <ProductShowcase specs={content.products} media={content.media} />
-      <Benefits />
+      <Benefits items={content.benefits} />
       <Scarcity 
         timeLeft={timeLeft} 
         stock={content.pricing.stockCount} 
@@ -194,7 +256,7 @@ const App: React.FC = () => {
         data={content.pricing} 
       />
       <Trust />
-      <FAQ />
+      <FAQ items={content.faqs} />
       <WhatsAppOrder whatsappNumber={content.pricing.whatsappNumber} />
       
       <footer className="bg-zinc-100 dark:bg-zinc-900 py-12 px-4 text-center border-t border-zinc-200 dark:border-zinc-800">
@@ -214,6 +276,7 @@ const App: React.FC = () => {
         whatsappNumber={content.pricing.whatsappNumber} 
         currentPrice={content.pricing.currentPrice}
         userLocation={userLocation}
+        onCaptureLead={addLead}
       />
     </div>
   );
