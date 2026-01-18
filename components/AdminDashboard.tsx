@@ -140,12 +140,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white flex flex-col font-sans transition-colors duration-300">
-      <header className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-4 md:px-6 py-4 flex justify-between items-center sticky top-0 z-[60] shadow-sm">
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 flex flex-col font-sans transition-colors duration-300">
+      <header className="bg-white border-b border-zinc-200 px-4 md:px-6 py-4 flex justify-between items-center sticky top-0 z-[60] shadow-sm">
         <div className="flex items-center gap-3 md:gap-4">
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="md:hidden w-10 h-10 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+            className="md:hidden w-10 h-10 flex items-center justify-center bg-zinc-100 rounded-lg text-zinc-600 hover:bg-zinc-200"
           >
             <i className={`fa-solid ${isSidebarOpen ? 'fa-xmark' : 'fa-bars'}`}></i>
           </button>
@@ -155,9 +155,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
         </div>
         <div className="flex items-center gap-2 md:gap-4">
           <button onClick={onLogout} className="px-2 md:px-4 py-2 text-[10px] md:text-xs text-red-500 hover:text-red-700 transition-colors font-bold uppercase tracking-widest">Logout</button>
-          <div className="hidden sm:block w-[1px] h-6 bg-zinc-200 dark:bg-zinc-800"></div>
-          <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition-colors">Cancel</button>
-          <button onClick={() => { onSave(formData); onClose(); }} className="px-4 md:px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-xs md:text-sm font-bold shadow-lg hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all">Save Config</button>
+          <div className="hidden sm:block w-[1px] h-6 bg-zinc-200"></div>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-800 transition-colors">Cancel</button>
+          <button onClick={() => { onSave(formData); onClose(); }} className="px-4 md:px-6 py-2 bg-black text-white rounded-lg text-xs md:text-sm font-bold shadow-lg hover:bg-zinc-800 transition-all">Save Config</button>
         </div>
       </header>
 
@@ -172,7 +172,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
 
         {/* Sidebar */}
         <aside className={`
-          fixed inset-y-0 left-0 w-72 bg-white dark:bg-zinc-900 md:bg-transparent z-[90] p-6 md:p-0 border-r md:border-r-0 border-zinc-200 dark:border-zinc-800 transform transition-transform duration-300 ease-in-out
+          fixed inset-y-0 left-0 w-72 bg-white md:bg-transparent z-[90] p-6 md:p-0 border-r md:border-r-0 border-zinc-200 transform transition-transform duration-300 ease-in-out
           md:relative md:translate-x-0 md:w-64 md:shrink-0 md:block
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
@@ -181,7 +181,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
               <button
                 key={tab.id}
                 onClick={() => handleTabClick(tab.id)}
-                className={`w-full text-left px-5 py-3.5 rounded-xl text-sm font-bold transition-all flex items-center gap-3 ${activeTab === tab.id ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl translate-x-1' : 'text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+                className={`w-full text-left px-5 py-3.5 rounded-xl text-sm font-bold transition-all flex items-center gap-3 ${activeTab === tab.id ? 'bg-black text-white shadow-xl translate-x-1' : 'text-zinc-500 hover:bg-zinc-200'}`}
               >
                 <i className={`fa-solid ${tab.icon} w-5`}></i>
                 {tab.label}
@@ -191,29 +191,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl md:rounded-3xl shadow-sm p-4 md:p-8 overflow-y-auto h-[calc(100vh-100px)] md:h-[calc(100vh-140px)] w-full">
+        <main className="flex-1 bg-white border border-zinc-200 rounded-2xl md:rounded-3xl shadow-sm p-4 md:p-8 overflow-y-auto h-[calc(100vh-100px)] md:h-[calc(100vh-140px)] w-full">
           {activeTab === 'crm' && (
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b dark:border-zinc-800 pb-6 gap-4">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b pb-6 gap-4">
                 <div>
                   <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight">Leads & Sales CRM</h2>
                   <p className="text-sm text-zinc-400">Manage your potential customers and orders</p>
                 </div>
                 <div className="bg-gold/10 px-4 py-2 rounded-xl border border-gold/20 self-start sm:self-auto">
                   <p className="text-[10px] font-black text-gold uppercase tracking-widest">Total Leads</p>
-                  <p className="text-xl font-bold text-black dark:text-white">{leads.length}</p>
+                  <p className="text-xl font-bold text-black">{leads.length}</p>
                 </div>
               </div>
 
               {leads.length === 0 ? (
-                <div className="py-12 md:py-20 text-center bg-zinc-50 dark:bg-zinc-800/50 rounded-3xl border border-dashed dark:border-zinc-700">
-                  <i className="fa-solid fa-inbox text-4xl text-zinc-200 dark:text-zinc-700 mb-4"></i>
+                <div className="py-12 md:py-20 text-center bg-zinc-50 rounded-3xl border border-dashed">
+                  <i className="fa-solid fa-inbox text-4xl text-zinc-200 mb-4"></i>
                   <p className="text-zinc-500 text-sm">No leads captured yet. Your store is live and ready!</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto border dark:border-zinc-800 rounded-2xl">
+                <div className="overflow-x-auto border rounded-2xl">
                   <table className="w-full text-left border-collapse min-w-[600px]">
-                    <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b dark:border-zinc-800">
+                    <thead className="bg-zinc-50 border-b">
                       <tr>
                         <th className="px-6 py-4 text-[10px] uppercase font-black text-zinc-400">Customer</th>
                         <th className="px-6 py-4 text-[10px] uppercase font-black text-zinc-400">Order</th>
@@ -221,9 +221,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                         <th className="px-6 py-4 text-[10px] uppercase font-black text-zinc-400">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y dark:divide-zinc-800">
+                    <tbody className="divide-y">
                       {leads.map((lead) => (
-                        <tr key={lead.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
+                        <tr key={lead.id} className="hover:bg-zinc-50/50 transition-colors">
                           <td className="px-6 py-4">
                             <p className="font-bold text-sm">{lead.name}</p>
                             <p className="text-[10px] text-zinc-500">{lead.phone} • {lead.location?.city}</p>
@@ -236,18 +236,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                             <select 
                               value={lead.status} 
                               onChange={(e) => updateLeadStatus(lead.id, e.target.value as any)}
-                              className="text-[10px] font-black uppercase px-2 py-1 rounded-full border border-zinc-200 dark:border-zinc-700 bg-transparent outline-none"
+                              className="text-[10px] font-black uppercase px-2 py-1 rounded-full border border-zinc-200 outline-none"
                             >
-                              <option className="bg-white dark:bg-zinc-900" value="New">New</option>
-                              <option className="bg-white dark:bg-zinc-900" value="Contacted">Contacted</option>
-                              <option className="bg-white dark:bg-zinc-900" value="Shipped">Shipped</option>
-                              <option className="bg-white dark:bg-zinc-900" value="Cancelled">Cancelled</option>
+                              <option value="New">New</option>
+                              <option value="Contacted">Contacted</option>
+                              <option value="Shipped">Shipped</option>
+                              <option value="Cancelled">Cancelled</option>
                             </select>
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex gap-2">
-                              <button onClick={() => generateFollowUp(lead, 'WhatsApp')} className="w-8 h-8 flex items-center justify-center bg-green-50 dark:bg-green-900/20 text-green-600 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40"><i className="fa-brands fa-whatsapp"></i></button>
-                              <button onClick={() => deleteLead(lead.id)} className="w-8 h-8 flex items-center justify-center bg-red-50 dark:bg-red-900/20 text-red-50 text-red-500 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40"><i className="fa-solid fa-trash-can text-xs"></i></button>
+                              <button onClick={() => generateFollowUp(lead, 'WhatsApp')} className="w-8 h-8 flex items-center justify-center bg-green-50 text-green-600 rounded-lg hover:bg-green-100"><i className="fa-brands fa-whatsapp"></i></button>
+                              <button onClick={() => deleteLead(lead.id)} className="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-100"><i className="fa-solid fa-trash-can text-xs"></i></button>
                             </div>
                           </td>
                         </tr>
@@ -257,7 +257,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                 </div>
               )}
               {aiResponse && (
-                <div className="mt-8 p-4 md:p-6 bg-zinc-900 dark:bg-black text-white rounded-2xl md:rounded-3xl border-2 border-gold/30 relative">
+                <div className="mt-8 p-4 md:p-6 bg-zinc-900 text-white rounded-2xl md:rounded-3xl border-2 border-gold/30 relative">
                   <h3 className="text-gold text-[10px] font-black uppercase tracking-widest mb-4">AI Sales Draft</h3>
                   <div className="text-xs md:text-sm font-mono whitespace-pre-wrap text-zinc-300">{aiResponse}</div>
                   <button onClick={() => setAiResponse('')} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><i className="fa-solid fa-xmark"></i></button>
@@ -268,7 +268,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
 
           {activeTab === 'content_editor' && (
             <div className="space-y-8 md:space-y-12 pb-10">
-              <div className="border-b dark:border-zinc-800 pb-6">
+              <div className="border-b pb-6">
                 <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight">Content & Media Editor</h2>
                 <p className="text-sm text-zinc-400">Manage all visual assets and page sections in one place.</p>
               </div>
@@ -279,14 +279,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                   <i className="fa-solid fa-store text-gold"></i>
                   <h3 className="text-lg font-bold uppercase tracking-widest">Store Identity & Contact</h3>
                 </div>
-                <div className="bg-zinc-50 dark:bg-zinc-800/30 border dark:border-zinc-800 p-4 md:p-6 rounded-2xl md:rounded-3xl grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-zinc-50 border p-4 md:p-6 rounded-2xl md:rounded-3xl grid grid-cols-1 md:grid-cols-2 gap-6">
                    <div>
                       <label className="block text-[10px] font-black uppercase text-zinc-400 mb-2 tracking-widest">Primary Product Name</label>
                       <input 
                         value={formData.pricing.productName} 
                         onChange={(e) => handlePricingChange('productName', e.target.value)}
                         placeholder="e.g. Novari Elite Gen 3"
-                        className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 p-4 rounded-xl font-bold focus:ring-2 ring-gold outline-none transition-all"
+                        className="w-full bg-white border border-zinc-200 p-4 rounded-xl font-bold focus:ring-2 ring-gold outline-none transition-all"
                       />
                    </div>
                    <div>
@@ -295,14 +295,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                         value={formData.pricing.whatsappNumber} 
                         onChange={(e) => handlePricingChange('whatsappNumber', e.target.value)}
                         placeholder="e.g. 2348000000000"
-                        className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 p-4 rounded-xl font-bold focus:ring-2 ring-gold outline-none transition-all"
+                        className="w-full bg-white border border-zinc-200 p-4 rounded-xl font-bold focus:ring-2 ring-gold outline-none transition-all"
                       />
                    </div>
                 </div>
               </section>
 
               {/* Media Section */}
-              <section className="space-y-6 pt-8 border-t dark:border-zinc-800">
+              <section className="space-y-6 pt-8 border-t">
                 <div className="flex items-center gap-3">
                   <i className="fa-solid fa-images text-gold"></i>
                   <h3 className="text-lg font-bold uppercase tracking-widest">Media Assets</h3>
@@ -314,9 +314,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                     { label: 'Side Profile 2', field: 'sideImage2' },
                     { label: 'Product Video (MP4)', field: 'productVideo' }
                   ].map((item) => (
-                    <div key={item.field} className="group bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 relative">
+                    <div key={item.field} className="group bg-zinc-50 border border-zinc-200 rounded-2xl p-4 relative">
                       <label className="block text-[9px] font-black uppercase text-zinc-400 mb-3 tracking-widest">{item.label}</label>
-                      <div className="aspect-square bg-zinc-200 dark:bg-zinc-900 rounded-xl overflow-hidden border border-zinc-300 dark:border-zinc-700 relative">
+                      <div className="aspect-square bg-zinc-200 rounded-xl overflow-hidden border border-zinc-300 relative">
                         {formData.media[item.field] ? (
                           item.field === 'productVideo' ? (
                             <video src={formData.media[item.field]} className="w-full h-full object-cover" controls />
@@ -324,7 +324,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                             <img src={formData.media[item.field]} className="w-full h-full object-cover" />
                           )
                         ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 gap-1">
+                          <div className="w-full h-full flex flex-col items-center justify-center text-zinc-400 gap-1">
                             <i className="fa-solid fa-cloud-arrow-up text-xl"></i>
                             <span className="text-[9px] font-bold">No file</span>
                           </div>
@@ -334,7 +334,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                         )}
                       </div>
                       <div className="mt-3 flex gap-2">
-                        <label className="flex-1 bg-black dark:bg-white text-white dark:text-black text-center py-2 rounded-lg text-[9px] font-black uppercase tracking-widest cursor-pointer hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all">
+                        <label className="flex-1 bg-black text-white text-center py-2 rounded-lg text-[9px] font-black uppercase tracking-widest cursor-pointer hover:bg-zinc-800 transition-all">
                           Change
                           <input type="file" accept={item.field === 'productVideo' ? "video/*" : "image/*"} className="hidden" onChange={(e) => handleMediaUpload(e, item.field)} />
                         </label>
@@ -345,7 +345,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
               </section>
 
               {/* Product Features / Specs */}
-              <section className="space-y-6 pt-8 border-t dark:border-zinc-800">
+              <section className="space-y-6 pt-8 border-t">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                   <div className="flex items-center gap-3">
                     <i className="fa-solid fa-screwdriver-wrench text-gold"></i>
@@ -353,16 +353,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                   </div>
                   <button 
                     onClick={() => addListItem('products', { icon: 'fa-gem', label: 'New Feature', value: 'Spec Detail' })}
-                    className="bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest self-start"
+                    className="bg-black text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest self-start"
                   >
                     + Add Feature
                   </button>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {formData.products.map((spec: any, idx: number) => (
-                    <div key={idx} className="bg-zinc-50 dark:bg-zinc-800/30 border dark:border-zinc-800 p-4 md:p-5 rounded-2xl md:rounded-3xl relative group flex flex-col sm:flex-row items-start gap-4">
+                    <div key={idx} className="bg-zinc-50 border p-4 md:p-5 rounded-2xl md:rounded-3xl relative group flex flex-col sm:flex-row items-start gap-4">
                       <button onClick={() => removeListItem('products', idx)} className="absolute top-3 right-3 text-red-500 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"><i className="fa-solid fa-circle-xmark"></i></button>
-                      <div className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-gold flex items-center justify-center w-14 h-14 shrink-0 shadow-sm">
+                      <div className="p-4 bg-white border border-zinc-200 rounded-xl text-gold flex items-center justify-center w-14 h-14 shrink-0 shadow-sm">
                         <i className={`fa-solid ${spec.icon} text-xl`}></i>
                       </div>
                       <div className="flex-1 space-y-2 w-full">
@@ -373,7 +373,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                               value={spec.icon} 
                               onChange={(e) => updateListItem('products', idx, 'icon', e.target.value)}
                               placeholder="fa-water"
-                              className="w-full text-[10px] font-mono bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 px-2 py-1 rounded outline-none focus:border-gold"
+                              className="w-full text-[10px] font-mono bg-white border border-zinc-200 px-2 py-1 rounded outline-none focus:border-gold"
                             />
                           </div>
                           <div>
@@ -382,7 +382,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                               value={spec.label} 
                               onChange={(e) => updateListItem('products', idx, 'label', e.target.value)}
                               placeholder="Water Resistant"
-                              className="w-full text-[10px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 px-2 py-1 rounded font-bold outline-none focus:border-gold"
+                              className="w-full text-[10px] bg-white border border-zinc-200 px-2 py-1 rounded font-bold outline-none focus:border-gold"
                             />
                           </div>
                         </div>
@@ -392,7 +392,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                             value={spec.value} 
                             onChange={(e) => updateListItem('products', idx, 'value', e.target.value)}
                             placeholder="30M Depth"
-                            className="w-full text-[10px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 px-2 py-1 rounded outline-none focus:border-gold"
+                            className="w-full text-[10px] bg-white border border-zinc-200 px-2 py-1 rounded outline-none focus:border-gold"
                           />
                         </div>
                       </div>
@@ -402,7 +402,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
               </section>
 
               {/* Benefits Editor */}
-              <section className="space-y-6 pt-8 border-t dark:border-zinc-800">
+              <section className="space-y-6 pt-8 border-t">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                   <div className="flex items-center gap-3">
                     <i className="fa-solid fa-award text-gold"></i>
@@ -410,17 +410,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                   </div>
                   <button 
                     onClick={() => addListItem('benefits', { title: 'New Benefit', desc: 'Detailed description...', img: 'https://images.unsplash.com/photo-1542496658-e33a6d0d50f6?q=80&w=1000' })}
-                    className="bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest self-start"
+                    className="bg-black text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest self-start"
                   >
                     + Add Benefit
                   </button>
                 </div>
                 <div className="grid gap-4">
                   {formData.benefits.map((benefit: any, idx: number) => (
-                    <div key={idx} className="bg-zinc-50 dark:bg-zinc-800/30 border dark:border-zinc-800 p-4 md:p-6 rounded-2xl md:rounded-3xl relative group">
+                    <div key={idx} className="bg-zinc-50 border p-4 md:p-6 rounded-2xl md:rounded-3xl relative group">
                       <button onClick={() => removeListItem('benefits', idx)} className="absolute top-4 right-4 text-red-500 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"><i className="fa-solid fa-circle-xmark"></i></button>
                       <div className="flex flex-col sm:flex-row gap-4 md:gap-6">
-                        <div className="w-full sm:w-24 h-24 bg-zinc-200 dark:bg-zinc-900 rounded-xl overflow-hidden shrink-0">
+                        <div className="w-full sm:w-24 h-24 bg-zinc-200 rounded-xl overflow-hidden shrink-0">
                           <img src={benefit.img} className="w-full h-full object-cover" />
                         </div>
                         <div className="flex-1 space-y-3">
@@ -428,19 +428,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                             value={benefit.title} 
                             onChange={(e) => updateListItem('benefits', idx, 'title', e.target.value)}
                             placeholder="Benefit Title"
-                            className="w-full font-bold bg-transparent border-b border-zinc-200 dark:border-zinc-700 pb-1 outline-none focus:border-gold"
+                            className="w-full font-bold bg-transparent border-b border-zinc-200 pb-1 outline-none focus:border-gold"
                           />
                           <textarea 
                             value={benefit.desc} 
                             onChange={(e) => updateListItem('benefits', idx, 'desc', e.target.value)}
                             placeholder="Description"
-                            className="w-full text-xs text-zinc-500 dark:text-zinc-400 bg-transparent outline-none h-16 resize-none"
+                            className="w-full text-xs text-zinc-500 bg-transparent outline-none h-16 resize-none"
                           />
                           <input 
                             value={benefit.img} 
                             onChange={(e) => updateListItem('benefits', idx, 'img', e.target.value)}
                             placeholder="Image URL"
-                            className="w-full text-[10px] text-zinc-400 dark:text-zinc-600 bg-transparent outline-none italic"
+                            className="w-full text-[10px] text-zinc-400 bg-transparent outline-none italic"
                           />
                         </div>
                       </div>
@@ -450,7 +450,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
               </section>
 
               {/* FAQ Editor */}
-              <section className="space-y-6 pt-8 border-t dark:border-zinc-800">
+              <section className="space-y-6 pt-8 border-t">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                   <div className="flex items-center gap-3">
                     <i className="fa-solid fa-circle-question text-gold"></i>
@@ -458,14 +458,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                   </div>
                   <button 
                     onClick={() => addListItem('faqs', { q: 'New Question?', a: 'Detailed answer text.' })}
-                    className="bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest self-start"
+                    className="bg-black text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest self-start"
                   >
                     + Add FAQ
                   </button>
                 </div>
                 <div className="space-y-4">
                   {formData.faqs.map((faq: any, idx: number) => (
-                    <div key={idx} className="bg-zinc-50 dark:bg-zinc-800/30 border dark:border-zinc-800 p-4 md:p-6 rounded-2xl relative group">
+                    <div key={idx} className="bg-zinc-50 border p-4 md:p-6 rounded-2xl relative group">
                       <button onClick={() => removeListItem('faqs', idx)} className="absolute top-4 right-4 text-red-500 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"><i className="fa-solid fa-circle-xmark"></i></button>
                       <div className="space-y-3">
                         <input 
@@ -478,7 +478,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                           value={faq.a} 
                           onChange={(e) => updateListItem('faqs', idx, 'a', e.target.value)}
                           placeholder="Answer"
-                          className="w-full text-sm text-zinc-500 dark:text-zinc-400 bg-transparent outline-none min-h-[60px] resize-none border-t border-zinc-100 dark:border-zinc-800 pt-2"
+                          className="w-full text-sm text-zinc-500 bg-transparent outline-none min-h-[60px] resize-none border-t border-zinc-100 pt-2"
                         />
                       </div>
                     </div>
@@ -490,7 +490,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
 
           {activeTab === 'marketing' && (
             <div className="space-y-8">
-              <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b dark:border-zinc-800 pb-6 gap-4">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b pb-6 gap-4">
                 <div>
                   <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight">Ad Pixels & Tracking</h2>
                   <p className="text-sm text-zinc-400">Configure your Facebook and TikTok marketing pixels.</p>
@@ -498,7 +498,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
               </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-                <div className="bg-zinc-50 dark:bg-zinc-800/30 p-6 md:p-8 rounded-2xl md:rounded-3xl border border-zinc-200 dark:border-zinc-800">
+                <div className="bg-zinc-50 p-6 md:p-8 rounded-2xl md:rounded-3xl border border-zinc-200">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-xl">
                       <i className="fa-brands fa-facebook-f"></i>
@@ -516,16 +516,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                         value={formData.marketing.fbPixelId} 
                         onChange={handleMarketingChange}
                         placeholder="e.g. 1234567890" 
-                        className="w-full border dark:border-zinc-700 p-4 rounded-xl focus:ring-2 ring-blue-600 outline-none transition-all bg-white dark:bg-zinc-900" 
+                        className="w-full border p-4 rounded-xl focus:ring-2 ring-blue-600 outline-none transition-all" 
                       />
                     </div>
                     <p className="text-[10px] text-zinc-400 italic">This ID will be used to track page views and purchase conversions on Facebook.</p>
                   </div>
                 </div>
 
-                <div className="bg-zinc-50 dark:bg-zinc-800/30 p-6 md:p-8 rounded-2xl md:rounded-3xl border border-zinc-200 dark:border-zinc-800">
+                <div className="bg-zinc-50 p-6 md:p-8 rounded-2xl md:rounded-3xl border border-zinc-200">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 bg-black dark:bg-zinc-900 text-white rounded-2xl flex items-center justify-center text-xl">
+                    <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center text-xl">
                       <i className="fa-brands fa-tiktok"></i>
                     </div>
                     <div>
@@ -541,7 +541,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                         value={formData.marketing.ttPixelId} 
                         onChange={handleMarketingChange}
                         placeholder="e.g. C1234567890" 
-                        className="w-full border dark:border-zinc-700 p-4 rounded-xl focus:ring-2 ring-zinc-900 dark:ring-white outline-none transition-all bg-white dark:bg-zinc-900" 
+                        className="w-full border p-4 rounded-xl focus:ring-2 ring-zinc-900 outline-none transition-all" 
                       />
                     </div>
                     <p className="text-[10px] text-zinc-400 italic">This ID will be used to track page views and purchase conversions on TikTok.</p>
@@ -554,14 +554,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
           {activeTab === 'automation' && (
             <div className="space-y-8">
               <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight">Automation Settings</h2>
-              <div className="bg-zinc-50 dark:bg-zinc-800/30 p-6 rounded-2xl md:rounded-3xl border border-zinc-200 dark:border-zinc-800 space-y-4">
+              <div className="bg-zinc-50 p-6 rounded-2xl md:rounded-3xl border border-zinc-200 space-y-4">
                 <div className="flex items-center gap-3 mb-2">
                   <i className="fa-solid fa-bolt-lightning text-gold"></i>
                   <h3 className="font-bold">Zapier / Webhook Integration</h3>
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Webhook Endpoint</label>
-                  <input name="crmWebhookUrl" value={formData.settings.crmWebhookUrl} onChange={handleSettingsChange} placeholder="https://hooks.zapier.com/..." className="w-full border dark:border-zinc-700 p-3 rounded-xl focus:ring-2 ring-black dark:ring-white outline-none bg-white dark:bg-zinc-900" />
+                  <input name="crmWebhookUrl" value={formData.settings.crmWebhookUrl} onChange={handleSettingsChange} placeholder="https://hooks.zapier.com/..." className="w-full border p-3 rounded-xl focus:ring-2 ring-black outline-none" />
                 </div>
               </div>
             </div>
@@ -574,20 +574,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-black uppercase text-zinc-400 mb-2">Sale Price (₦)</label>
-                    <input type="number" value={formData.pricing.currentPrice} onChange={(e) => handlePricingChange('currentPrice', Number(e.target.value))} className="w-full border dark:border-zinc-700 p-3 rounded-xl bg-white dark:bg-zinc-900" />
+                    <input type="number" value={formData.pricing.currentPrice} onChange={(e) => handlePricingChange('currentPrice', Number(e.target.value))} className="w-full border p-3 rounded-xl" />
                   </div>
                   <div>
                     <label className="block text-[10px] font-black uppercase text-zinc-400 mb-2">Stock Level</label>
-                    <input type="number" value={formData.pricing.stockCount} onChange={(e) => handlePricingChange('stockCount', Number(e.target.value))} className="w-full border dark:border-zinc-700 p-3 rounded-xl bg-white dark:bg-zinc-900" />
+                    <input type="number" value={formData.pricing.stockCount} onChange={(e) => handlePricingChange('stockCount', Number(e.target.value))} className="w-full border p-3 rounded-xl" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-[10px] font-black uppercase text-zinc-400 mb-2">Main Headline</label>
-                  <input name="headline" value={formData.hero.headline} onChange={handleHeroChange} className="w-full border dark:border-zinc-700 p-3 rounded-xl font-bold outline-none focus:border-gold bg-white dark:bg-zinc-900" />
+                  <input name="headline" value={formData.hero.headline} onChange={handleHeroChange} className="w-full border p-3 rounded-xl font-bold outline-none focus:border-gold" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black uppercase text-zinc-400 mb-2">Description</label>
-                  <textarea name="description" value={formData.hero.description} onChange={handleHeroChange} className="w-full border dark:border-zinc-700 p-3 rounded-xl h-32 outline-none focus:border-gold bg-white dark:bg-zinc-900" />
+                  <textarea name="description" value={formData.hero.description} onChange={handleHeroChange} className="w-full border p-3 rounded-xl h-32 outline-none focus:border-gold" />
                 </div>
               </div>
             </div>
@@ -595,14 +595,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
 
           {activeTab === 'traffic' && (
             <div className="space-y-6">
-              <h2 className="text-xl font-bold border-b dark:border-zinc-800 pb-4 uppercase tracking-tighter">Live Session Tracking</h2>
-              <div className="bg-zinc-900 dark:bg-black text-white p-6 md:p-8 rounded-2xl md:rounded-3xl border border-zinc-800 dark:border-zinc-700 relative overflow-hidden group">
+              <h2 className="text-xl font-bold border-b pb-4 uppercase tracking-tighter">Live Session Tracking</h2>
+              <div className="bg-zinc-900 text-white p-6 md:p-8 rounded-2xl md:rounded-3xl border border-zinc-800 relative overflow-hidden group">
                  <div className="absolute top-0 right-0 p-4 opacity-10"><i className="fa-solid fa-earth-africa text-6xl md:text-8xl"></i></div>
                  {userLocation ? (
                    <div className="relative z-10 space-y-4">
                      <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em]">Visitor Region</p>
                      <p className="text-2xl md:text-4xl font-serif gold-text">{userLocation.city}, {userLocation.country}</p>
-                     <div className="pt-4 border-t border-zinc-800 dark:border-zinc-700 flex flex-col sm:flex-row justify-between text-[10px] uppercase font-bold text-zinc-500 gap-2">
+                     <div className="pt-4 border-t border-zinc-800 flex flex-col sm:flex-row justify-between text-[10px] uppercase font-bold text-zinc-500 gap-2">
                        <span>IP: {userLocation.ip}</span>
                        <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> Active</span>
                      </div>
@@ -614,10 +614,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
 
           {activeTab === 'settings' && (
             <div className="space-y-6">
-              <h2 className="text-xl font-bold border-b dark:border-zinc-800 pb-4 uppercase tracking-tighter">Security</h2>
+              <h2 className="text-xl font-bold border-b pb-4 uppercase tracking-tighter">Security</h2>
               <div className="max-w-md">
                 <label className="block text-[10px] font-black uppercase text-zinc-400 mb-2">New Admin Password</label>
-                <input type="password" name="adminPassword" value={formData.settings.adminPassword} onChange={handleSettingsChange} className="w-full border dark:border-zinc-700 p-3 rounded-xl outline-none focus:border-gold bg-white dark:bg-zinc-900" />
+                <input type="password" name="adminPassword" value={formData.settings.adminPassword} onChange={handleSettingsChange} className="w-full border p-3 rounded-xl outline-none focus:border-gold" />
               </div>
             </div>
           )}
