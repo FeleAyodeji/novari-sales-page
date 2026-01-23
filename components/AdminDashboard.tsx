@@ -56,7 +56,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
   };
 
   const deleteLead = (id: string) => {
-    if (confirm("Delete this lead?")) {
+    if (confirm("Delete this lead? This action cannot be undone.")) {
       onLeadsUpdate(leads.filter(l => l.id !== id));
     }
   };
@@ -139,6 +139,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
     setIsSidebarOpen(false);
   };
 
+  // Grouping logic for Leads
+  const groupedLeads = leads.reduce((groups: { [key: string]: Lead[] }, lead) => {
+    const date = new Date(lead.timestamp);
+    const monthYear = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    if (!groups[monthYear]) {
+      groups[monthYear] = [];
+    }
+    groups[monthYear].push(lead);
+    return groups;
+  }, {});
+
+  // Sort groups by time (newest month first)
+  const sortedMonthKeys = Object.keys(groupedLeads).sort((a, b) => {
+    return new Date(b).getTime() - new Date(a).getTime();
+  });
+
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 flex flex-col font-sans transition-colors duration-300">
       <header className="bg-white border-b border-zinc-200 px-4 md:px-6 py-4 flex justify-between items-center sticky top-0 z-[60] shadow-sm">
@@ -149,7 +165,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
           >
             <i className={`fa-solid ${isSidebarOpen ? 'fa-xmark' : 'fa-bars'}`}></i>
           </button>
-          <h1 className="font-serif text-lg md:text-2xl font-bold tracking-tighter">
+          <h1 className="font-serif text-lg md:text-2xl font-bold tracking-tighter text-black">
             NOVARI <span className="hidden sm:inline-block text-[10px] bg-gold/20 px-2 py-1 rounded text-gold-700 ml-2 font-sans tracking-widest uppercase font-black">Admin Panel</span>
           </h1>
         </div>
@@ -197,10 +213,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
               <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b pb-6 gap-4">
                 <div>
                   <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight">Leads & Sales CRM</h2>
-                  <p className="text-sm text-zinc-400">Manage your potential customers and orders</p>
+                  <p className="text-sm text-zinc-400">Monthly grouped potential customers and orders</p>
                 </div>
                 <div className="bg-gold/10 px-4 py-2 rounded-xl border border-gold/20 self-start sm:self-auto">
-                  <p className="text-[10px] font-black text-gold uppercase tracking-widest">Total Leads</p>
+                  <p className="text-[10px] font-black text-gold uppercase tracking-widest">Total Active Leads</p>
                   <p className="text-xl font-bold text-black">{leads.length}</p>
                 </div>
               </div>
@@ -211,53 +227,79 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                   <p className="text-zinc-500 text-sm">No leads captured yet. Your store is live and ready!</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto border rounded-2xl">
-                  <table className="w-full text-left border-collapse min-w-[600px]">
-                    <thead className="bg-zinc-50 border-b">
-                      <tr>
-                        <th className="px-6 py-4 text-[10px] uppercase font-black text-zinc-400">Customer</th>
-                        <th className="px-6 py-4 text-[10px] uppercase font-black text-zinc-400">Order</th>
-                        <th className="px-6 py-4 text-[10px] uppercase font-black text-zinc-400">Status</th>
-                        <th className="px-6 py-4 text-[10px] uppercase font-black text-zinc-400">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {leads.map((lead) => (
-                        <tr key={lead.id} className="hover:bg-zinc-50/50 transition-colors">
-                          <td className="px-6 py-4">
-                            <p className="font-bold text-sm">{lead.name}</p>
-                            <p className="text-[10px] text-zinc-500">{lead.phone} • {lead.location?.city}</p>
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="text-sm font-medium">x{lead.quantity}</p>
-                            <p className="text-[10px] text-zinc-400 italic">{new Date(lead.timestamp).toLocaleDateString()}</p>
-                          </td>
-                          <td className="px-6 py-4">
-                            <select 
-                              value={lead.status} 
-                              onChange={(e) => updateLeadStatus(lead.id, e.target.value as any)}
-                              className="text-[10px] font-black uppercase px-2 py-1 rounded-full border border-zinc-200 outline-none"
-                            >
-                              <option value="New">New</option>
-                              <option value="Contacted">Contacted</option>
-                              <option value="Shipped">Shipped</option>
-                              <option value="Cancelled">Cancelled</option>
-                            </select>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex gap-2">
-                              <button onClick={() => generateFollowUp(lead, 'WhatsApp')} className="w-8 h-8 flex items-center justify-center bg-green-50 text-green-600 rounded-lg hover:bg-green-100"><i className="fa-brands fa-whatsapp"></i></button>
-                              <button onClick={() => deleteLead(lead.id)} className="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-100"><i className="fa-solid fa-trash-can text-xs"></i></button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-8">
+                  {sortedMonthKeys.map((month) => (
+                    <div key={month} className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <div className="h-[1px] flex-1 bg-zinc-100"></div>
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 bg-zinc-50 px-3 py-1 rounded-full border border-zinc-100">
+                          {month}
+                        </h3>
+                        <div className="h-[1px] flex-1 bg-zinc-100"></div>
+                      </div>
+                      
+                      <div className="overflow-x-auto border rounded-2xl shadow-sm">
+                        <table className="w-full text-left border-collapse min-w-[1000px]">
+                          <thead className="bg-zinc-50 border-b">
+                            <tr>
+                              <th className="px-6 py-4 text-[10px] uppercase font-black text-zinc-400">Name</th>
+                              <th className="px-6 py-4 text-[10px] uppercase font-black text-zinc-400">Email</th>
+                              <th className="px-6 py-4 text-[10px] uppercase font-black text-zinc-400">Phone</th>
+                              <th className="px-6 py-4 text-[10px] uppercase font-black text-zinc-400">Address</th>
+                              <th className="px-6 py-4 text-[10px] uppercase font-black text-zinc-400">Order</th>
+                              <th className="px-6 py-4 text-[10px] uppercase font-black text-zinc-400">Status</th>
+                              <th className="px-6 py-4 text-[10px] uppercase font-black text-zinc-400">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {groupedLeads[month].map((lead) => (
+                              <tr key={lead.id} className="hover:bg-zinc-50/50 transition-colors">
+                                <td className="px-6 py-4">
+                                  <p className="font-bold text-sm text-black">{lead.name}</p>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <p className="text-[10px] text-zinc-600 font-medium break-all">{lead.email}</p>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <p className="text-sm text-zinc-900 font-semibold">{lead.phone}</p>
+                                </td>
+                                <td className="px-6 py-4 max-w-xs">
+                                  <p className="text-[10px] text-zinc-700 leading-tight">{lead.address}</p>
+                                  <p className="text-[8px] text-zinc-400 uppercase font-bold mt-1">{lead.location?.city || 'Nigeria'}</p>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <p className="text-sm font-bold text-zinc-900">x{lead.quantity}</p>
+                                  <p className="text-[10px] text-zinc-400 italic">ID: {lead.id}</p>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <select 
+                                    value={lead.status} 
+                                    onChange={(e) => updateLeadStatus(lead.id, e.target.value as any)}
+                                    className="text-[10px] font-black uppercase px-2 py-1 rounded-full border border-zinc-200 outline-none bg-white text-black focus:ring-1 ring-gold cursor-pointer"
+                                  >
+                                    <option value="New" className="text-black">New</option>
+                                    <option value="Contacted" className="text-black">Contacted</option>
+                                    <option value="Shipped" className="text-black">Shipped</option>
+                                    <option value="Cancelled" className="text-black">Cancelled</option>
+                                  </select>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex gap-2">
+                                    <button onClick={() => generateFollowUp(lead, 'WhatsApp')} title="AI Follow-up" className="w-8 h-8 flex items-center justify-center bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"><i className="fa-brands fa-whatsapp"></i></button>
+                                    <button onClick={() => deleteLead(lead.id)} title="Delete Lead" className="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors"><i className="fa-solid fa-trash-can text-xs"></i></button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
               {aiResponse && (
-                <div className="mt-8 p-4 md:p-6 bg-zinc-900 text-white rounded-2xl md:rounded-3xl border-2 border-gold/30 relative">
+                <div className="mt-8 p-4 md:p-6 bg-zinc-900 text-white rounded-2xl md:rounded-3xl border-2 border-gold/30 relative animate-in fade-in slide-in-from-bottom-4">
                   <h3 className="text-gold text-[10px] font-black uppercase tracking-widest mb-4">AI Sales Draft</h3>
                   <div className="text-xs md:text-sm font-mono whitespace-pre-wrap text-zinc-300">{aiResponse}</div>
                   <button onClick={() => setAiResponse('')} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><i className="fa-solid fa-xmark"></i></button>
