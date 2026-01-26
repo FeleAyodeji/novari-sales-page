@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { Lead } from '../App';
 
@@ -11,15 +11,37 @@ interface AdminDashboardProps {
   onSave: (newContent: any) => void;
   onClose: () => void;
   onLogout: () => void;
+  dbSynced?: boolean;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, leads, onLeadsUpdate, onSave, onClose, onLogout }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, leads, onLeadsUpdate, onSave, onClose, onLogout, dbSynced }) => {
   const [formData, setFormData] = useState(content);
   const [activeTab, setActiveTab] = useState('crm');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUploading, setIsUploading] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState<string | null>(null);
   const [aiResponse, setAiResponse] = useState<string>('');
+  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+
+  // Performance Optimization: Grouping logic for Leads using useMemo
+  const groupedLeads = useMemo(() => {
+    return leads.reduce((groups: { [key: string]: Lead[] }, lead) => {
+      const date = new Date(lead.timestamp);
+      const monthYear = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+      if (!groups[monthYear]) {
+        groups[monthYear] = [];
+      }
+      groups[monthYear].push(lead);
+      return groups;
+    }, {});
+  }, [leads]);
+
+  // Performance Optimization: Sort month keys using useMemo
+  const sortedMonthKeys = useMemo(() => {
+    return Object.keys(groupedLeads).sort((a, b) => {
+      return new Date(b).getTime() - new Date(a).getTime();
+    });
+  }, [groupedLeads]);
 
   const generateFollowUp = async (lead: Lead, channel: 'WhatsApp' | 'Email') => {
     setIsGenerating(lead.id);
@@ -56,8 +78,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
   };
 
   const deleteLead = (id: string) => {
-    if (confirm("Delete this lead? This action cannot be undone.")) {
-      onLeadsUpdate(leads.filter(l => l.id !== id));
+    if (confirm("Permanently remove this lead from CRM?")) {
+      const updatedLeads = leads.filter(l => l.id !== id);
+      onLeadsUpdate(updatedLeads);
+    }
+  };
+
+  const testWebhook = async () => {
+    const url = formData.settings.crmWebhookUrl;
+    if (!url) {
+      alert("Please enter a Webhook URL first.");
+      return;
+    }
+
+    setIsTestingWebhook(true);
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'test_connection',
+          timestamp: Date.now(),
+          message: "Testing Novari CRM Webhook Connection"
+        })
+      });
+      
+      if (response.ok || response.type === 'opaque') {
+        alert("Webhook connection test sent successfully!");
+      } else {
+        alert(`Webhook test failed with status: ${response.status}`);
+      }
+    } catch (err) {
+      alert(`Connection failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsTestingWebhook(false);
     }
   };
 
@@ -139,22 +193,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
     setIsSidebarOpen(false);
   };
 
-  // Grouping logic for Leads
-  const groupedLeads = leads.reduce((groups: { [key: string]: Lead[] }, lead) => {
-    const date = new Date(lead.timestamp);
-    const monthYear = date.toLocaleString('default', { month: 'long', year: 'numeric' });
-    if (!groups[monthYear]) {
-      groups[monthYear] = [];
-    }
-    groups[monthYear].push(lead);
-    return groups;
-  }, {});
-
-  // Sort groups by time (newest month first)
-  const sortedMonthKeys = Object.keys(groupedLeads).sort((a, b) => {
-    return new Date(b).getTime() - new Date(a).getTime();
-  });
-
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 flex flex-col font-sans transition-colors duration-300">
       <header className="bg-white border-b border-zinc-200 px-4 md:px-6 py-4 flex justify-between items-center sticky top-0 z-[60] shadow-sm">
@@ -165,9 +203,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
           >
             <i className={`fa-solid ${isSidebarOpen ? 'fa-xmark' : 'fa-bars'}`}></i>
           </button>
-          <h1 className="font-serif text-lg md:text-2xl font-bold tracking-tighter text-black">
-            NOVARI <span className="hidden sm:inline-block text-[10px] bg-gold/20 px-2 py-1 rounded text-gold-700 ml-2 font-sans tracking-widest uppercase font-black">Admin Panel</span>
-          </h1>
+          <div className="flex flex-col">
+            <h1 className="font-serif text-lg md:text-2xl font-bold tracking-tighter text-black flex items-center gap-2">
+              NOVARI <span className="hidden sm:inline-block text-[10px] bg-gold/20 px-2 py-1 rounded text-gold-700 font-sans tracking-widest uppercase font-black">Admin Panel</span>
+            </h1>
+            {dbSynced && (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                <span className="text-[8px] font-black uppercase tracking-widest text-green-600">Live Cloud Sync</span>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
           <button onClick={onLogout} className="px-2 md:px-4 py-2 text-[10px] md:text-xs text-red-500 hover:text-red-700 transition-colors font-bold uppercase tracking-widest">Logout</button>
@@ -601,9 +647,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                   <i className="fa-solid fa-bolt-lightning text-gold"></i>
                   <h3 className="font-bold">Zapier / Webhook Integration</h3>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Webhook Endpoint</label>
-                  <input name="crmWebhookUrl" value={formData.settings.crmWebhookUrl} onChange={handleSettingsChange} placeholder="https://hooks.zapier.com/..." className="w-full border p-3 rounded-xl focus:ring-2 ring-black outline-none" />
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Webhook Endpoint URL</label>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <input 
+                        name="crmWebhookUrl" 
+                        value={formData.settings.crmWebhookUrl} 
+                        onChange={handleSettingsChange} 
+                        placeholder="https://hooks.zapier.com/..." 
+                        className="flex-1 border p-3 rounded-xl focus:ring-2 ring-black outline-none bg-white font-mono text-xs" 
+                      />
+                      <button 
+                        onClick={testWebhook}
+                        disabled={isTestingWebhook}
+                        className="px-6 py-3 bg-zinc-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-zinc-800 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {isTestingWebhook ? (
+                          <><i className="fa-solid fa-circle-notch animate-spin"></i> Testing...</>
+                        ) : (
+                          <><i className="fa-solid fa-paper-plane"></i> Test Connection</>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                    <p className="text-[10px] text-blue-700 font-bold uppercase tracking-widest mb-1 flex items-center gap-2">
+                      <i className="fa-solid fa-circle-info"></i> How it works
+                    </p>
+                    <p className="text-xs text-blue-600 leading-relaxed">
+                      Every time a lead is captured, Novari will send a POST request with the lead details (JSON format) to this URL. Perfect for syncing with Zapier, Make, or custom backends.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

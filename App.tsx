@@ -15,6 +15,7 @@ import OrderFormModal from './components/OrderFormModal';
 import ThemeToggle from './components/ThemeToggle';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
+import { supabase } from './supabase';
 
 interface UserLocation {
   city: string;
@@ -124,6 +125,8 @@ const App: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 59, seconds: 59 });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [dbSynced, setDbSynced] = useState(false);
+  
   const [leads, setLeads] = useState<Lead[]>(() => {
     const saved = localStorage.getItem('novari_leads');
     return saved ? JSON.parse(saved) : [];
@@ -155,6 +158,39 @@ const App: React.FC = () => {
     fetchLocation();
   }, []);
 
+  // Hydrate leads and content from Supabase
+  useEffect(() => {
+    const hydrateFromSupabase = async () => {
+      try {
+        const { data: dbLeads, error: leadsError } = await supabase
+          .from('leads')
+          .select('*')
+          .order('timestamp', { ascending: false });
+
+        if (!leadsError && dbLeads) {
+          setLeads(dbLeads as Lead[]);
+        }
+
+        const { data: dbContent, error: contentError } = await supabase
+          .from('site_config')
+          .select('content')
+          .single();
+
+        if (!contentError && dbContent) {
+          setContent(dbContent.content);
+        }
+        
+        if (!leadsError && !contentError) {
+          setDbSynced(true);
+        }
+      } catch (err) {
+        console.error('Supabase hydration failed:', err);
+        setDbSynced(false);
+      }
+    };
+    hydrateFromSupabase();
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && e.key.toLowerCase() === 'a') {
@@ -167,6 +203,19 @@ const App: React.FC = () => {
 
   useEffect(() => {
     localStorage.setItem('novari_content', JSON.stringify(content));
+    // Background sync content to Supabase
+    const syncContent = async () => {
+      try {
+        const { error } = await supabase
+          .from('site_config')
+          .upsert({ id: 1, content }, { onConflict: 'id' });
+        
+        if (!error) setDbSynced(true);
+      } catch (err) {
+        console.error('Supabase content sync failed:', err);
+      }
+    };
+    syncContent();
   }, [content]);
 
   useEffect(() => {
@@ -197,8 +246,57 @@ const App: React.FC = () => {
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const updateContent = (newContent: any) => setContent(newContent);
-  const addLead = (newLead: Lead) => setLeads(prev => [newLead, ...prev]);
-  const updateLeads = (updatedLeads: Lead[]) => setLeads(updatedLeads);
+  
+  const addLead = async (newLead: Lead) => {
+    setLeads(prev => [newLead, ...prev]);
+
+    // Supabase sync
+    try {
+      await supabase.from('leads').insert([newLead]);
+    } catch (err) {
+      console.error('Supabase lead insertion failed:', err);
+    }
+
+    // CRM Webhook Integration
+    const webhookUrl = content.settings?.crmWebhookUrl;
+    if (webhookUrl && webhookUrl.trim() !== '') {
+      fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'lead_captured',
+          data: newLead,
+          source: window.location.origin
+        }),
+      }).catch(err => console.error('Novari Webhook Error:', err));
+    }
+  };
+
+  const updateLeads = async (updatedLeads: Lead[]) => {
+    const currentIds = updatedLeads.map(l => l.id);
+    const prevIds = leads.map(l => l.id);
+    const deletedId = prevIds.find(id => !currentIds.includes(id));
+    
+    // Optimistic UI update
+    setLeads(updatedLeads);
+    
+    try {
+      if (deletedId) {
+        await supabase.from('leads').delete().eq('id', deletedId);
+      } else {
+        // Find modified lead (status update)
+        const modifiedLead = updatedLeads.find((l, idx) => {
+          const prev = leads.find(p => p.id === l.id);
+          return prev && prev.status !== l.status;
+        });
+        if (modifiedLead) {
+          await supabase.from('leads').update({ status: modifiedLead.status }).eq('id', modifiedLead.id);
+        }
+      }
+    } catch (err) {
+      console.error('Supabase leads update sync failed:', err);
+    }
+  };
 
   return (
     <div className="min-h-screen relative bg-slate-50 dark:bg-black text-zinc-900 dark:text-white transition-colors duration-300">
@@ -225,6 +323,7 @@ const App: React.FC = () => {
               setIsAuthenticated(false);
               setShowAdmin(false);
             }}
+            dbSynced={dbSynced}
           />
         ) : (
           <AdminLogin 
