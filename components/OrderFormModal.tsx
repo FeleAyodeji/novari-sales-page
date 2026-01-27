@@ -12,6 +12,7 @@ interface OrderFormModalProps {
 
 const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsappNumber, currentPrice, userLocation, onCaptureLead }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -26,8 +27,12 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsa
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    
+    // Simulate a brief processing delay for a premium feel and to ensure lead capture starts
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
     // Calculate actual total based on the selected quantity and its specific discount
     let total = currentPrice;
@@ -50,12 +55,13 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsa
     // Capture in CRM
     onCaptureLead(newLead);
 
-    // Show success message instead of redirecting
+    setIsSubmitting(false);
     setIsSubmitted(true);
   };
 
   const handleClose = () => {
     setIsSubmitted(false);
+    setIsSubmitting(false);
     onClose();
   };
 
@@ -64,7 +70,20 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsa
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={handleClose}></div>
       <div className="relative bg-zinc-900 border-2 gold-border w-full max-w-lg rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(212,175,55,0.3)] transform transition-all">
         
-        {!isSubmitted ? (
+        {isSubmitting ? (
+          <div className="p-20 flex flex-col items-center justify-center space-y-6">
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-gold/20 border-t-gold rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-gold/10 border-b-gold rounded-full animate-spin-reverse"></div>
+              </div>
+            </div>
+            <div className="text-center">
+              <h3 className="text-white font-serif text-xl tracking-widest uppercase animate-pulse">Processing Order</h3>
+              <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] mt-2 font-bold">Securing your timepiece...</p>
+            </div>
+          </div>
+        ) : !isSubmitted ? (
           <>
             <div className="gold-bg text-black p-6 flex justify-between items-center">
               <div>
@@ -144,6 +163,15 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsa
           </div>
         )}
       </div>
+      <style>{`
+        @keyframes spin-reverse {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(-360deg); }
+        }
+        .animate-spin-reverse {
+          animation: spin-reverse 1s linear infinite;
+        }
+      `}</style>
     </div>
   );
 };

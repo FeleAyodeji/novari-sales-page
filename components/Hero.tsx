@@ -14,30 +14,65 @@ interface HeroProps {
 
 const Hero: React.FC<HeroProps> = ({ timeLeft, onOrderClick, data }) => {
   return (
-    <section className="relative min-h-[90vh] flex flex-col items-center justify-center text-center px-4 overflow-hidden">
+    <section className="relative min-h-screen flex flex-col items-center justify-center text-center overflow-hidden">
+      {/* High-Impact Announcement Bar */}
+      <div className="absolute top-0 left-0 right-0 z-[60] gold-bg py-2 overflow-hidden border-b border-black/10">
+        <div className="flex whitespace-nowrap animate-marquee">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-8 mx-4">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black flex items-center gap-2">
+                <i className="fa-solid fa-bolt"></i> 50% ANNIVERSARY DISCOUNT
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black flex items-center gap-2">
+                <i className="fa-solid fa-truck-fast"></i> FREE NATIONWIDE DELIVERY
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black flex items-center gap-2">
+                <i className="fa-solid fa-handshake"></i> PAY ON DELIVERY NATIONWIDE
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="absolute inset-0 z-0 bg-gradient-to-b from-zinc-100 to-white dark:from-zinc-900 dark:to-black transition-colors duration-500"></div>
       <div className="absolute inset-0 z-0 opacity-10 dark:opacity-20 pointer-events-none bg-[url('https://images.unsplash.com/photo-1547996160-81dfa63595aa?q=80&w=1974&auto=format&fit=crop')] bg-cover bg-center"></div>
       
-      <div className="absolute top-6 left-6 md:top-10 md:left-10 z-20 flex flex-col items-start pointer-events-none">
+      <div className="absolute top-16 left-6 md:top-20 md:left-10 z-20 flex flex-col items-start pointer-events-none">
         <h2 className="font-serif text-xl md:text-2xl tracking-[0.2em] text-zinc-900 dark:text-white leading-tight">NOVARI</h2>
         <div className="w-full h-[1px] bg-zinc-900 dark:bg-white my-1"></div>
         <p className="text-[6px] md:text-[8px] uppercase tracking-[0.3em] text-zinc-500 dark:text-zinc-400">Mark Your Moment.</p>
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto pt-20">
-        <span className="gold-text uppercase tracking-widest text-sm font-bold mb-4 block animate-pulse">
-          {data.anniversaryOffer}
+      <div className="relative z-10 max-w-4xl mx-auto pt-32 px-4">
+        {/* Quick-Trust Badges at First Glance */}
+        <div className="flex flex-wrap justify-center gap-2 mb-8 animate-in fade-in slide-in-from-top-4 duration-1000">
+           <div className="bg-black/5 dark:bg-white/5 backdrop-blur-sm border border-gold/30 px-4 py-1.5 rounded-full flex items-center gap-2">
+             <i className="fa-solid fa-tag gold-text text-[10px]"></i>
+             <span className="text-[9px] font-black uppercase tracking-widest gold-text">50% Off Applied</span>
+           </div>
+           <div className="bg-black/5 dark:bg-white/5 backdrop-blur-sm border border-gold/30 px-4 py-1.5 rounded-full flex items-center gap-2">
+             <i className="fa-solid fa-truck gold-text text-[10px]"></i>
+             <span className="text-[9px] font-black uppercase tracking-widest gold-text">Free Delivery</span>
+           </div>
+           <div className="bg-black/5 dark:bg-white/5 backdrop-blur-sm border border-gold/30 px-4 py-1.5 rounded-full flex items-center gap-2">
+             <i className="fa-solid fa-hand-holding-dollar gold-text text-[10px]"></i>
+             <span className="text-[9px] font-black uppercase tracking-widest gold-text">Pay On Delivery</span>
+           </div>
+        </div>
+
+        <span className="gold-text uppercase tracking-[0.4em] text-[10px] md:text-xs font-black mb-4 block animate-pulse">
+          ANNIVERSARY DISCOUNT: 50% OFF TODAY ONLY
         </span>
         <h1 className="font-serif text-4xl md:text-7xl mb-6 leading-tight tracking-tight text-zinc-900 dark:text-white">
           {data.headline}<br />
-          <span className="gold-text">{data.subheadline}</span>
+          <span className="gold-text italic">{data.subheadline}</span>
         </h1>
         <p className="text-zinc-600 dark:text-zinc-400 text-lg md:text-xl mb-10 max-w-2xl mx-auto font-light leading-relaxed">
           {data.description}
         </p>
 
         <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 p-6 rounded-2xl mb-10 inline-block shadow-lg">
-          <p className="text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-widest mb-3">Flash Sale Ends In:</p>
+          <p className="text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-widest mb-3">Limited Offer Ends In:</p>
           <div className="flex gap-4 text-2xl md:text-4xl font-bold font-serif text-zinc-900 dark:text-white">
             <div className="w-12 md:w-20">
               <span className="animate-timer-tick inline-block">{timeLeft.hours.toString().padStart(2, '0')}</span>
@@ -65,6 +100,16 @@ const Hero: React.FC<HeroProps> = ({ timeLeft, onOrderClick, data }) => {
           </button>
         </div>
       </div>
+      
+      <style>{`
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+          animation: marquee 30s linear infinite;
+        }
+      `}</style>
     </section>
   );
 };
