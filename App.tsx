@@ -130,51 +130,34 @@ const DEFAULT_CONTENT = {
 const App: React.FC = () => {
   const [showAdmin, setShowAdmin] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [hasHydrated, setHasHydrated] = useState(false); 
   const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 59, seconds: 59 });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [dbSynced, setDbSynced] = useState(true);
   
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [content, setContent] = useState(DEFAULT_CONTENT);
+  const [content, setContent] = useState(() => {
+    try {
+      const cached = localStorage.getItem('novari_content_cache');
+      return cached ? JSON.parse(cached) : DEFAULT_CONTENT;
+    } catch (e) {
+      return DEFAULT_CONTENT;
+    }
+  });
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
-  // 1. Initial Authentication & Session Check
   useEffect(() => {
     const initAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
-      
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      supabase.auth.onAuthStateChange((_event, session) => {
         setIsAuthenticated(!!session);
       });
-
-      return () => subscription.unsubscribe();
     };
     initAuth();
   }, []);
 
-  // 2. Fetch User Location
-  useEffect(() => {
-    const fetchLocation = async () => {
-      try {
-        const response = await fetch('https://ipapi.co/json/');
-        const data = await response.json();
-        setUserLocation({
-          city: data.city || 'Lagos',
-          region: data.region || 'Lagos State',
-          country: data.country_name || 'Nigeria',
-          ip: data.ip
-        });
-      } catch (error) {
-        setUserLocation({ city: 'Lagos', region: 'Lagos State', country: 'Nigeria', ip: 'Unknown' });
-      }
-    };
-    fetchLocation();
-  }, []);
-
-  // 3. Hydration Logic (Wait for DB)
   useEffect(() => {
     const hydrate = async () => {
       try {
@@ -186,6 +169,11 @@ const App: React.FC = () => {
 
         if (dbConfig?.content) {
           setContent(dbConfig.content);
+          try {
+            localStorage.setItem('novari_content_cache', JSON.stringify(dbConfig.content));
+          } catch (e) {
+            console.warn('Local cache full, skipping disk persistence.');
+          }
         }
 
         if (isAuthenticated) {
@@ -199,17 +187,32 @@ const App: React.FC = () => {
           }
         }
       } catch (err) {
-        console.warn('Hydration error:', err);
+        console.warn('Silent hydration error:', err);
       } finally {
-        setIsInitializing(false);
+        setHasHydrated(true);
       }
     };
     hydrate();
   }, [isAuthenticated]);
 
-  // 4. Persistence Sync (Admin only)
   useEffect(() => {
-    if (isInitializing || !isAuthenticated) return;
+    fetch('https://ipapi.co/json/')
+      .then(res => res.json())
+      .then(data => {
+        setUserLocation({
+          city: data.city || 'Lagos',
+          region: data.region || 'Lagos State',
+          country: data.country_name || 'Nigeria',
+          ip: data.ip
+        });
+      })
+      .catch(() => {
+        setUserLocation({ city: 'Lagos', region: 'Lagos State', country: 'Nigeria', ip: 'Unknown' });
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated || !isAuthenticated) return;
 
     const syncToDB = async () => {
       setDbSynced(false);
@@ -220,17 +223,21 @@ const App: React.FC = () => {
         
         if (error) throw error;
         setDbSynced(true);
+        try {
+          localStorage.setItem('novari_content_cache', JSON.stringify(content));
+        } catch (e) {
+          console.warn('Storage quota exceeded, could not cache large media locally.');
+        }
       } catch (e) {
         console.error('Database Sync Error:', e);
         setDbSynced(false);
       }
     };
 
-    const timer = setTimeout(syncToDB, 2000);
+    const timer = setTimeout(syncToDB, 3000);
     return () => clearTimeout(timer);
-  }, [content, isInitializing, isAuthenticated]);
+  }, [content, hasHydrated, isAuthenticated]);
 
-  // Theme management
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'dark';
     setTheme(savedTheme);
@@ -243,7 +250,6 @@ const App: React.FC = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && e.key.toLowerCase() === 'a') {
@@ -254,7 +260,6 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Scarcity Timer
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
@@ -273,16 +278,13 @@ const App: React.FC = () => {
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   
   const addLead = async (newLead: Lead) => {
-    // 1. Optimistic Update (Immediate Feedback)
     setLeads(prev => [newLead, ...prev]);
-    
-    // 2. Prepare database payload (mapping camelCase to lowercase for DB compatibility)
     const dbPayload = {
       id: newLead.id,
       name: newLead.name,
       email: newLead.email,
       phone: newLead.phone,
-      altphone: newLead.altPhone || null, // Map altPhone to altphone column
+      altphone: newLead.altPhone || null,
       address: newLead.address,
       quantity: newLead.quantity,
       location: newLead.location,
@@ -292,41 +294,28 @@ const App: React.FC = () => {
 
     try {
       const { error } = await supabase.from('leads').insert([dbPayload]);
-      if (error) {
-        console.error('CRITICAL: Lead failed to save to Supabase:', error.message, error.details);
-        // We keep it in local state for the current session, but warn the admin
-      } else {
-        console.log('SUCCESS: Lead securely stored in cloud database.');
-      }
+      if (error) console.error('Supabase Save Error:', error.message);
     } catch (err) {
-      console.error('NETWORK ERROR: Could not reach Supabase:', err);
+      console.error('Network Error:', err);
     }
 
-    // 3. External Webhook
     const webhookUrl = content.settings?.crmWebhookUrl;
-    if (webhookUrl && webhookUrl.trim() !== '') {
+    if (webhookUrl?.trim()) {
       fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event: 'lead_captured',
-          data: newLead,
-          source: window.location.origin
-        }),
-      }).catch(err => console.error('Webhook Error:', err));
+        body: JSON.stringify({ event: 'lead_captured', data: newLead, source: window.location.origin }),
+      }).catch(() => {});
     }
   };
 
   const updateLeads = async (updatedLeads: Lead[]) => {
     if (!isAuthenticated) return;
-    
     const prevLeads = leads;
     setLeads(updatedLeads);
-    
     try {
       const currentIds = updatedLeads.map(l => l.id);
       const prevIds = prevLeads.map(l => l.id);
-      
       const deletedId = prevIds.find(id => !currentIds.includes(id));
       if (deletedId) {
         await supabase.from('leads').delete().eq('id', deletedId);
@@ -339,21 +328,8 @@ const App: React.FC = () => {
           await supabase.from('leads').update({ status: modifiedLead.status }).eq('id', modifiedLead.id);
         }
       }
-    } catch (err) {
-      console.error('Leads update error:', err);
-    }
+    } catch (err) { console.error('Lead status update failed:', err); }
   };
-
-  if (isInitializing) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-gold/20 border-t-gold rounded-full animate-spin"></div>
-          <p className="font-serif text-white tracking-[0.3em] text-[10px] uppercase animate-pulse">Initializing Novari...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen relative bg-slate-50 dark:bg-black text-zinc-900 dark:text-white transition-colors duration-300">

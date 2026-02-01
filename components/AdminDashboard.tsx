@@ -30,6 +30,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
   const isVideo = (url?: string) => {
     if (!url) return false;
     return url.startsWith('data:video') || 
+           url.startsWith('blob:video') ||
            url.toLowerCase().includes('.mp4') || 
            url.toLowerCase().includes('.mov') || 
            url.toLowerCase().includes('.webm');
@@ -49,6 +50,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
         media: { ...formData.media, [field]: "" }
       });
     }
+  };
+
+  const isTooLarge = (base64?: string) => {
+    if (!base64 || !base64.includes(';base64,')) return false;
+    // Base64 size estimation
+    const stringLength = base64.length - base64.indexOf(';base64,') - 8;
+    const sizeInBytes = (stringLength * 3) / 4;
+    return sizeInBytes > 4 * 1024 * 1024; // > 4MB is risky for JSON sync
   };
 
   // Computed Analytics
@@ -442,9 +451,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                        {['mainImage', 'sideImage1', 'sideImage2', 'productVideo'].map(field => {
                          const currentUrl = formData.media[field];
                          const isMediaVideo = isVideo(currentUrl);
+                         const isLarge = isTooLarge(currentUrl);
 
                          return (
-                           <div key={field} className="relative aspect-square bg-white border border-zinc-200 rounded-2xl flex flex-col items-center justify-center gap-2 group cursor-pointer overflow-hidden shadow-sm hover:shadow-md transition-all">
+                           <div key={field} className={`relative aspect-square bg-white border-2 rounded-2xl flex flex-col items-center justify-center gap-2 group cursor-pointer overflow-hidden shadow-sm hover:shadow-md transition-all ${isLarge ? 'border-amber-300' : 'border-zinc-200'}`}>
                               {currentUrl && !isUploading && (
                                 <button 
                                   onClick={(e) => clearMediaField(e, field)}
@@ -454,11 +464,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                                 </button>
                               )}
 
+                              {isLarge && (
+                                <div className="absolute bottom-2 left-2 z-20 bg-amber-500 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase shadow-lg">
+                                  File too large
+                                </div>
+                              )}
+
                               {isUploading === field ? (
                                 <i className="fa-solid fa-circle-notch animate-spin text-gold"></i>
                               ) : currentUrl ? (
                                 isMediaVideo ? (
-                                  <video src={currentUrl} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                                  <video key={currentUrl} src={currentUrl} className="w-full h-full object-cover" muted loop autoPlay playsInline />
                                 ) : (
                                   <img src={currentUrl} className="w-full h-full object-cover" alt={field} />
                                 )
@@ -491,6 +507,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                        })}
                     </div>
                     <p className="mt-4 text-[9px] text-zinc-400 font-black uppercase tracking-widest text-center">Auto-optimized for mobile</p>
+                    <p className="mt-1 text-[8px] text-zinc-400 text-center italic">Avoid files > 4MB for stable cloud sync</p>
                  </div>
               </div>
             </div>
