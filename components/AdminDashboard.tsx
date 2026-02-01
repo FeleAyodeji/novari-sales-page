@@ -507,7 +507,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                        })}
                     </div>
                     <p className="mt-4 text-[9px] text-zinc-400 font-black uppercase tracking-widest text-center">Auto-optimized for mobile</p>
-                    <p className="mt-1 text-[8px] text-zinc-400 text-center italic">Avoid files > 4MB for stable cloud sync</p>
+                    <p className="mt-1 text-[8px] text-zinc-400 text-center italic">Avoid files &gt; 4MB for stable cloud sync</p>
                  </div>
               </div>
             </div>
