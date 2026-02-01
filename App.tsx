@@ -37,6 +37,7 @@ export interface Lead {
 }
 
 const DEFAULT_CONTENT = {
+  lastUpdated: Date.now(),
   settings: {
     adminPassword: "Engineer@2021",
     crmWebhookUrl: "",
@@ -168,11 +169,24 @@ const App: React.FC = () => {
           .maybeSingle();
 
         if (dbConfig?.content) {
-          setContent(dbConfig.content);
-          try {
-            localStorage.setItem('novari_content_cache', JSON.stringify(dbConfig.content));
-          } catch (e) {
-            console.warn('Local cache full, skipping disk persistence.');
+          const remoteContent = dbConfig.content;
+          const localContent = JSON.parse(localStorage.getItem('novari_content_cache') || '{}');
+          
+          // Deep Comparison + Timestamp Versioning
+          const remoteStr = JSON.stringify(remoteContent);
+          const localStr = JSON.stringify(content);
+          
+          if (remoteStr !== localStr) {
+            // Only update if remote is actually different to prevent flicker
+            // OR if remote is strictly newer than local
+            if (!content.lastUpdated || remoteContent.lastUpdated >= content.lastUpdated) {
+              setContent(remoteContent);
+              try {
+                localStorage.setItem('novari_content_cache', remoteStr);
+              } catch (e) {
+                console.warn('Storage cache failed.');
+              }
+            }
           }
         }
 
@@ -217,6 +231,21 @@ const App: React.FC = () => {
     const syncToDB = async () => {
       setDbSynced(false);
       try {
+        // Double check remote timestamp before pushing to prevent clobbering Device A's work
+        const { data: currentRemote } = await supabase
+          .from('site_config')
+          .select('content')
+          .eq('id', 1)
+          .maybeSingle();
+        
+        const remoteTimestamp = currentRemote?.content?.lastUpdated || 0;
+        
+        if (content.lastUpdated < remoteTimestamp) {
+          console.warn("Cloud version is newer. Local sync aborted to prevent data loss.");
+          setDbSynced(true);
+          return;
+        }
+
         const { error } = await supabase
           .from('site_config')
           .upsert({ id: 1, content: content }, { onConflict: 'id' });
@@ -226,7 +255,7 @@ const App: React.FC = () => {
         try {
           localStorage.setItem('novari_content_cache', JSON.stringify(content));
         } catch (e) {
-          console.warn('Storage quota exceeded, could not cache large media locally.');
+          console.warn('Storage quota exceeded.');
         }
       } catch (e) {
         console.error('Database Sync Error:', e);
@@ -350,7 +379,7 @@ const App: React.FC = () => {
             userLocation={userLocation}
             leads={leads}
             onLeadsUpdate={updateLeads}
-            onSave={setContent} 
+            onSave={(newContent) => setContent({...newContent, lastUpdated: Date.now()})} 
             onClose={() => setShowAdmin(false)} 
             onLogout={async () => {
               await supabase.auth.signOut();

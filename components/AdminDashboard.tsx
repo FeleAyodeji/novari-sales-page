@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { Lead } from '../App';
+import { supabase } from '../supabase';
 
 interface AdminDashboardProps {
   content: any;
@@ -52,12 +53,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
     }
   };
 
-  const isTooLarge = (base64?: string) => {
-    if (!base64 || !base64.includes(';base64,')) return false;
-    // Base64 size estimation
-    const stringLength = base64.length - base64.indexOf(';base64,') - 8;
-    const sizeInBytes = (stringLength * 3) / 4;
-    return sizeInBytes > 4 * 1024 * 1024; // > 4MB is risky for JSON sync
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(field);
+    try {
+      // 1. Sanitize filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${field}-${Date.now()}.${fileExt}`;
+      const filePath = `storefront/${fileName}`;
+
+      // 2. Upload to Supabase Storage (Assumes 'media' bucket exists)
+      const { data, error } = await supabase.storage
+        .from('media')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+      if (error) throw error;
+
+      // 3. Get Public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath);
+
+      // 4. Update Form State with permanent URL
+      setFormData({
+        ...formData,
+        media: { ...formData.media, [field]: publicUrl }
+      });
+      
+    } catch (err: any) {
+      alert(`Upload failed: ${err.message || 'Check if "media" bucket exists in Supabase Storage'}`);
+    } finally {
+      setIsUploading(null);
+    }
   };
 
   // Computed Analytics
@@ -451,10 +480,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                        {['mainImage', 'sideImage1', 'sideImage2', 'productVideo'].map(field => {
                          const currentUrl = formData.media[field];
                          const isMediaVideo = isVideo(currentUrl);
-                         const isLarge = isTooLarge(currentUrl);
 
                          return (
-                           <div key={field} className={`relative aspect-square bg-white border-2 rounded-2xl flex flex-col items-center justify-center gap-2 group cursor-pointer overflow-hidden shadow-sm hover:shadow-md transition-all ${isLarge ? 'border-amber-300' : 'border-zinc-200'}`}>
+                           <div key={field} className={`relative aspect-square bg-white border-2 rounded-2xl flex flex-col items-center justify-center gap-2 group cursor-pointer overflow-hidden shadow-sm hover:shadow-md transition-all border-zinc-200`}>
                               {currentUrl && !isUploading && (
                                 <button 
                                   onClick={(e) => clearMediaField(e, field)}
@@ -464,14 +492,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                                 </button>
                               )}
 
-                              {isLarge && (
-                                <div className="absolute bottom-2 left-2 z-20 bg-amber-500 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase shadow-lg">
-                                  File too large
-                                </div>
-                              )}
-
                               {isUploading === field ? (
-                                <i className="fa-solid fa-circle-notch animate-spin text-gold"></i>
+                                <div className="flex flex-col items-center gap-2">
+                                  <i className="fa-solid fa-circle-notch animate-spin text-gold text-2xl"></i>
+                                  <span className="text-[8px] font-black text-zinc-400">Uploading to Cloud...</span>
+                                </div>
                               ) : currentUrl ? (
                                 isMediaVideo ? (
                                   <video key={currentUrl} src={currentUrl} className="w-full h-full object-cover" muted loop autoPlay playsInline />
@@ -485,29 +510,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ content, userLocation, 
                                 </>
                               )}
                               
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                                <i className="fa-solid fa-cloud-arrow-up text-white text-xl"></i>
-                                <span className="text-[8px] font-black text-white uppercase tracking-widest">Update Cloud Media</span>
-                              </div>
+                              {!isUploading && (
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                  <i className="fa-solid fa-cloud-arrow-up text-white text-xl"></i>
+                                  <span className="text-[8px] font-black text-white uppercase tracking-widest">Update Cloud Media</span>
+                                </div>
+                              )}
 
-                              <input type="file" accept="image/*,video/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
-                                 const file = e.target.files?.[0];
-                                 if(file) {
-                                   setIsUploading(field);
-                                   const reader = new FileReader();
-                                   reader.onloadend = () => {
-                                     setFormData({ ...formData, media: { ...formData.media, [field]: reader.result as string } });
-                                     setIsUploading(null);
-                                   };
-                                   reader.readAsDataURL(file);
-                                 }
-                              }} />
+                              <input 
+                                type="file" 
+                                accept={field.includes('Video') ? 'video/*' : 'image/*'} 
+                                className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-wait" 
+                                disabled={!!isUploading}
+                                onChange={(e) => handleFileUpload(e, field)} 
+                              />
                            </div>
                          );
                        })}
                     </div>
-                    <p className="mt-4 text-[9px] text-zinc-400 font-black uppercase tracking-widest text-center">Auto-optimized for mobile</p>
-                    <p className="mt-1 text-[8px] text-zinc-400 text-center italic">Avoid files &gt; 4MB for stable cloud sync</p>
+                    <p className="mt-4 text-[9px] text-zinc-400 font-black uppercase tracking-widest text-center">Cloud Storage Persistence</p>
+                    <p className="mt-1 text-[8px] text-zinc-400 text-center italic">Cross-device stable & optimized</p>
                  </div>
               </div>
             </div>
