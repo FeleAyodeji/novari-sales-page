@@ -12,6 +12,34 @@ interface ProductShowcaseProps {
 }
 
 const ProductShowcase: React.FC<ProductShowcaseProps> = ({ specs, media }) => {
+  const isVideo = (url?: string) => {
+    if (!url) return false;
+    return url.startsWith('data:video') || 
+           url.toLowerCase().includes('.mp4') || 
+           url.toLowerCase().includes('.mov') || 
+           url.toLowerCase().includes('.webm');
+  };
+
+  const MediaElement: React.FC<{ url: string, className: string, isMain?: boolean }> = ({ url, className, isMain }) => {
+    if (isVideo(url)) {
+      return (
+        <video 
+          src={url} 
+          className={className} 
+          autoPlay 
+          muted 
+          loop 
+          playsInline
+          {...(isMain ? { controls: true } : {})}
+        />
+      );
+    }
+    return <img src={url} alt="Product view" className={className} />;
+  };
+
+  // Determine what shows in the primary slot (Large)
+  const primaryMedia = media.productVideo || media.mainImage;
+
   return (
     <section className="py-24 bg-white dark:bg-black px-4 transition-colors">
       <div className="max-w-6xl mx-auto">
@@ -23,25 +51,13 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({ specs, media }) => {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center min-h-[320px]">
-              {media.productVideo ? (
-                <video 
-                  src={media.productVideo} 
-                  className="w-full h-80 object-cover" 
-                  autoPlay 
-                  muted 
-                  loop 
-                  playsInline
-                  controls
-                />
-              ) : (
-                <img src={media.mainImage} alt="Main view" className="w-full h-80 object-cover" />
-              )}
+              <MediaElement url={primaryMedia} className="w-full h-80 object-cover" isMain={true} />
             </div>
             <div className="rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
-              <img src={media.sideImage1} alt="Side profile 1" className="w-full h-40 object-cover" />
+              <MediaElement url={media.sideImage1} className="w-full h-40 object-cover" />
             </div>
             <div className="rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
-              <img src={media.sideImage2} alt="Side profile 2" className="w-full h-40 object-cover" />
+              <MediaElement url={media.sideImage2} className="w-full h-40 object-cover" />
             </div>
           </div>
 

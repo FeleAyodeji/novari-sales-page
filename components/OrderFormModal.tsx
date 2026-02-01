@@ -5,23 +5,28 @@ interface OrderFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   whatsappNumber: string;
-  currentPrice: number;
+  pricing: any; // Updated to take full pricing object
   userLocation: any;
   onCaptureLead: (lead: any) => void;
 }
 
-const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsappNumber, currentPrice, userLocation, onCaptureLead }) => {
+const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsappNumber, pricing, userLocation, onCaptureLead }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
+    altPhone: '',
     address: '',
     quantity: '1'
   });
 
   if (!isOpen) return null;
+
+  const currentPrice = pricing.currentPrice || 42500;
+  const priceQty2 = pricing.priceQty2 || Math.floor(currentPrice * 1.8);
+  const priceQty3 = pricing.priceQty3 || Math.floor(currentPrice * 2.5);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -34,17 +39,13 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsa
     // Simulate a brief processing delay for a premium feel and to ensure lead capture starts
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Calculate actual total based on the selected quantity and its specific discount
-    let total = currentPrice;
-    if (formData.quantity === '2') total = Math.floor(currentPrice * 1.8);
-    if (formData.quantity === '3') total = Math.floor(currentPrice * 2.5);
-    
     // Create Lead Object for CRM
     const newLead = {
       id: Math.random().toString(36).substr(2, 9).toUpperCase(),
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
+      altPhone: formData.altPhone,
       address: formData.address,
       quantity: formData.quantity,
       location: userLocation,
@@ -109,23 +110,28 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, whatsa
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Email Address</label>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Gmail Address</label>
                 <input required type="email" name="email" placeholder="email@example.com" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-gold transition-all" value={formData.email} onChange={handleChange} />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Phone</label>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Primary Phone</label>
                   <input required type="tel" name="phone" placeholder="080 123 4567" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-gold transition-all" value={formData.phone} onChange={handleChange} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Quantity</label>
-                  <select name="quantity" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-gold transition-all" value={formData.quantity} onChange={handleChange}>
-                    <option value="1">1 Piece (₦{currentPrice.toLocaleString()})</option>
-                    <option value="2">2 Pieces (₦{Math.floor(currentPrice * 1.8).toLocaleString()})</option>
-                    <option value="3">3 Pieces (₦{Math.floor(currentPrice * 2.5).toLocaleString()})</option>
-                  </select>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Alt. Phone (Optional)</label>
+                  <input type="tel" name="altPhone" placeholder="090 987 6543" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-gold transition-all" value={formData.altPhone} onChange={handleChange} />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Quantity</label>
+                <select name="quantity" className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-gold transition-all" value={formData.quantity} onChange={handleChange}>
+                  <option value="1">1 Piece (₦{currentPrice.toLocaleString()})</option>
+                  <option value="2">2 Pieces (₦{priceQty2.toLocaleString()})</option>
+                  <option value="3">3 Pieces (₦{priceQty3.toLocaleString()})</option>
+                </select>
               </div>
 
               <div>

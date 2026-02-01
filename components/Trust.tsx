@@ -6,7 +6,7 @@ const Trust: React.FC = () => {
     <section className="py-16 bg-black px-4">
       <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
         <div className="text-center">
-          <i className="fa-solid fa-shield-halved gold-text text-3xl mb-4"></i>
+          <i className="fa-solid fa-certificate gold-text text-3xl mb-4"></i>
           <h4 className="text-sm font-bold mb-1">100% Genuine</h4>
           <p className="text-[10px] text-zinc-500">Authentic materials only</p>
         </div>

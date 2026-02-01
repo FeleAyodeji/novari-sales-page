@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Hero from './components/Hero';
 import ProductShowcase from './components/ProductShowcase';
 import Benefits from './components/Benefits';
@@ -9,7 +9,6 @@ import Pricing from './components/Pricing';
 import Trust from './components/Trust';
 import FAQ from './components/FAQ';
 import StickyCTA from './components/StickyCTA';
-import WhatsAppOrder from './components/WhatsAppOrder';
 import WhatsAppFloating from './components/WhatsAppFloating';
 import OrderFormModal from './components/OrderFormModal';
 import ThemeToggle from './components/ThemeToggle';
@@ -29,11 +28,12 @@ export interface Lead {
   name: string;
   email: string;
   phone: string;
+  altPhone?: string;
   address: string;
   quantity: string;
   location: UserLocation | null;
   timestamp: number;
-  status: 'New' | 'Contacted' | 'Shipped' | 'Cancelled';
+  status: 'New' | 'Contacted' | 'Shipped' | 'Delivered' | 'Cancelled';
 }
 
 const DEFAULT_CONTENT = {
@@ -50,11 +50,19 @@ const DEFAULT_CONTENT = {
   },
   pricing: {
     productName: "The Novari Elite",
+    subDescription: "FULL LUXURY SET INCLUDED",
     currentPrice: 42500,
     oldPrice: 85000,
+    priceQty2: 76500,
+    priceQty3: 106250,
     whatsappNumber: "09013359052",
     orderMessage: "Hello Novari! I want to order the Novari Elite Watch set for ₦42,500. Please take my order.",
-    stockCount: 7
+    stockCount: 7,
+    features: [
+      "1x Premium The Novari Elite Watch",
+      "BONUS: Signature Novari Display Box (Valued at ₦5,000)",
+      "BONUS: Free Nationwide Shipping (Valued at ₦3,500)"
+    ]
   },
   marketing: {
     fbPixelId: "",
@@ -122,24 +130,32 @@ const DEFAULT_CONTENT = {
 const App: React.FC = () => {
   const [showAdmin, setShowAdmin] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 59, seconds: 59 });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
-  const [dbSynced, setDbSynced] = useState(false);
+  const [dbSynced, setDbSynced] = useState(true);
   
-  const [leads, setLeads] = useState<Lead[]>(() => {
-    const saved = localStorage.getItem('novari_leads');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [content, setContent] = useState(() => {
-    const saved = localStorage.getItem('novari_content');
-    return saved ? JSON.parse(saved) : DEFAULT_CONTENT;
-  });
-  
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    return localStorage.getItem('theme') as 'light' | 'dark' || 'dark';
-  });
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [content, setContent] = useState(DEFAULT_CONTENT);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
+  // 1. Initial Authentication & Session Check
+  useEffect(() => {
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setIsAuthenticated(!!session);
+      });
+
+      return () => subscription.unsubscribe();
+    };
+    initAuth();
+  }, []);
+
+  // 2. Fetch User Location
   useEffect(() => {
     const fetchLocation = async () => {
       try {
@@ -158,39 +174,76 @@ const App: React.FC = () => {
     fetchLocation();
   }, []);
 
-  // Hydrate leads and content from Supabase
+  // 3. Hydration Logic (Wait for DB)
   useEffect(() => {
-    const hydrateFromSupabase = async () => {
+    const hydrate = async () => {
       try {
-        const { data: dbLeads, error: leadsError } = await supabase
-          .from('leads')
-          .select('*')
-          .order('timestamp', { ascending: false });
-
-        if (!leadsError && dbLeads) {
-          setLeads(dbLeads as Lead[]);
-        }
-
-        const { data: dbContent, error: contentError } = await supabase
+        const { data: dbConfig } = await supabase
           .from('site_config')
           .select('content')
-          .single();
+          .eq('id', 1)
+          .maybeSingle();
 
-        if (!contentError && dbContent) {
-          setContent(dbContent.content);
+        if (dbConfig?.content) {
+          setContent(dbConfig.content);
         }
-        
-        if (!leadsError && !contentError) {
-          setDbSynced(true);
+
+        if (isAuthenticated) {
+          const { data: dbLeads, error: leadsError } = await supabase
+            .from('leads')
+            .select('*')
+            .order('timestamp', { ascending: false });
+          
+          if (!leadsError && dbLeads) {
+            setLeads(dbLeads as Lead[]);
+          }
         }
       } catch (err) {
-        console.error('Supabase hydration failed:', err);
+        console.warn('Hydration error:', err);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+    hydrate();
+  }, [isAuthenticated]);
+
+  // 4. Persistence Sync (Admin only)
+  useEffect(() => {
+    if (isInitializing || !isAuthenticated) return;
+
+    const syncToDB = async () => {
+      setDbSynced(false);
+      try {
+        const { error } = await supabase
+          .from('site_config')
+          .upsert({ id: 1, content: content }, { onConflict: 'id' });
+        
+        if (error) throw error;
+        setDbSynced(true);
+      } catch (e) {
+        console.error('Database Sync Error:', e);
         setDbSynced(false);
       }
     };
-    hydrateFromSupabase();
+
+    const timer = setTimeout(syncToDB, 2000);
+    return () => clearTimeout(timer);
+  }, [content, isInitializing, isAuthenticated]);
+
+  // Theme management
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'dark';
+    setTheme(savedTheme);
   }, []);
 
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') root.classList.add('dark');
+    else root.classList.remove('dark');
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && e.key.toLowerCase() === 'a') {
@@ -201,34 +254,7 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('novari_content', JSON.stringify(content));
-    // Background sync content to Supabase
-    const syncContent = async () => {
-      try {
-        const { error } = await supabase
-          .from('site_config')
-          .upsert({ id: 1, content }, { onConflict: 'id' });
-        
-        if (!error) setDbSynced(true);
-      } catch (err) {
-        console.error('Supabase content sync failed:', err);
-      }
-    };
-    syncContent();
-  }, [content]);
-
-  useEffect(() => {
-    localStorage.setItem('novari_leads', JSON.stringify(leads));
-  }, [leads]);
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    if (theme === 'dark') root.classList.add('dark');
-    else root.classList.remove('dark');
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
+  // Scarcity Timer
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
@@ -245,19 +271,38 @@ const App: React.FC = () => {
   }, []);
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  const updateContent = (newContent: any) => setContent(newContent);
   
   const addLead = async (newLead: Lead) => {
+    // 1. Optimistic Update (Immediate Feedback)
     setLeads(prev => [newLead, ...prev]);
+    
+    // 2. Prepare database payload (mapping camelCase to lowercase for DB compatibility)
+    const dbPayload = {
+      id: newLead.id,
+      name: newLead.name,
+      email: newLead.email,
+      phone: newLead.phone,
+      altphone: newLead.altPhone || null, // Map altPhone to altphone column
+      address: newLead.address,
+      quantity: newLead.quantity,
+      location: newLead.location,
+      timestamp: newLead.timestamp,
+      status: newLead.status
+    };
 
-    // Supabase sync
     try {
-      await supabase.from('leads').insert([newLead]);
+      const { error } = await supabase.from('leads').insert([dbPayload]);
+      if (error) {
+        console.error('CRITICAL: Lead failed to save to Supabase:', error.message, error.details);
+        // We keep it in local state for the current session, but warn the admin
+      } else {
+        console.log('SUCCESS: Lead securely stored in cloud database.');
+      }
     } catch (err) {
-      console.error('Supabase lead insertion failed:', err);
+      console.error('NETWORK ERROR: Could not reach Supabase:', err);
     }
 
-    // CRM Webhook Integration
+    // 3. External Webhook
     const webhookUrl = content.settings?.crmWebhookUrl;
     if (webhookUrl && webhookUrl.trim() !== '') {
       fetch(webhookUrl, {
@@ -268,25 +313,26 @@ const App: React.FC = () => {
           data: newLead,
           source: window.location.origin
         }),
-      }).catch(err => console.error('Novari Webhook Error:', err));
+      }).catch(err => console.error('Webhook Error:', err));
     }
   };
 
   const updateLeads = async (updatedLeads: Lead[]) => {
-    const currentIds = updatedLeads.map(l => l.id);
-    const prevIds = leads.map(l => l.id);
-    const deletedId = prevIds.find(id => !currentIds.includes(id));
+    if (!isAuthenticated) return;
     
-    // Optimistic UI update
+    const prevLeads = leads;
     setLeads(updatedLeads);
     
     try {
+      const currentIds = updatedLeads.map(l => l.id);
+      const prevIds = prevLeads.map(l => l.id);
+      
+      const deletedId = prevIds.find(id => !currentIds.includes(id));
       if (deletedId) {
         await supabase.from('leads').delete().eq('id', deletedId);
       } else {
-        // Find modified lead (status update)
-        const modifiedLead = updatedLeads.find((l, idx) => {
-          const prev = leads.find(p => p.id === l.id);
+        const modifiedLead = updatedLeads.find(l => {
+          const prev = prevLeads.find(p => p.id === l.id);
           return prev && prev.status !== l.status;
         });
         if (modifiedLead) {
@@ -294,9 +340,20 @@ const App: React.FC = () => {
         }
       }
     } catch (err) {
-      console.error('Supabase leads update sync failed:', err);
+      console.error('Leads update error:', err);
     }
   };
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-gold/20 border-t-gold rounded-full animate-spin"></div>
+          <p className="font-serif text-white tracking-[0.3em] text-[10px] uppercase animate-pulse">Initializing Novari...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen relative bg-slate-50 dark:bg-black text-zinc-900 dark:text-white transition-colors duration-300">
@@ -305,7 +362,7 @@ const App: React.FC = () => {
       <button 
         onClick={() => setShowAdmin(true)}
         className="fixed bottom-4 left-4 z-[70] p-3 bg-zinc-800/20 hover:bg-zinc-800/80 rounded-full text-[10px] text-white opacity-0 hover:opacity-100 transition-all cursor-default"
-        title="Admin Shortcut: Alt + A"
+        title="Admin Portal (Alt + A)"
       >
         <i className="fa-solid fa-lock"></i>
       </button>
@@ -317,60 +374,46 @@ const App: React.FC = () => {
             userLocation={userLocation}
             leads={leads}
             onLeadsUpdate={updateLeads}
-            onSave={updateContent} 
+            onSave={setContent} 
             onClose={() => setShowAdmin(false)} 
-            onLogout={() => {
-              setIsAuthenticated(false);
+            onLogout={async () => {
+              await supabase.auth.signOut();
               setShowAdmin(false);
             }}
             dbSynced={dbSynced}
           />
         ) : (
-          <AdminLogin 
-            correctPassword={content.settings?.adminPassword || "Engineer@2021"} 
-            onSuccess={() => setIsAuthenticated(true)} 
-            onCancel={() => setShowAdmin(false)} 
-          />
+          <AdminLogin onCancel={() => setShowAdmin(false)} />
         )
       ) : (
         <>
-          <Hero 
-            timeLeft={timeLeft} 
-            onOrderClick={() => setIsModalOpen(true)} 
-            data={content.hero} 
-          />
+          <Hero timeLeft={timeLeft} onOrderClick={() => setIsModalOpen(true)} data={content.hero} />
           <ProductShowcase specs={content.products} media={content.media} />
           <Benefits items={content.benefits} />
-          <Scarcity 
-            timeLeft={timeLeft} 
-            stock={content.pricing.stockCount} 
-            userCity={userLocation?.city}
-          />
+          <Scarcity timeLeft={timeLeft} stock={content.pricing.stockCount} userCity={userLocation?.city} />
           <Testimonials reviews={content.testimonials} />
-          <Pricing 
-            onOrderClick={() => setIsModalOpen(true)} 
-            data={content.pricing} 
-          />
+          <Pricing onOrderClick={() => setIsModalOpen(true)} data={content.pricing} />
           <Trust />
           <FAQ items={content.faqs} />
-          <WhatsAppOrder whatsappNumber={content.pricing.whatsappNumber} />
-          
           <footer className="bg-zinc-100 dark:bg-zinc-900 py-12 px-4 text-center border-t border-zinc-200 dark:border-zinc-800">
             <div className="flex flex-col items-center mb-6">
               <p className="font-serif text-3xl tracking-[0.2em] mb-1">NOVARI</p>
               <div className="w-16 h-[1px] bg-zinc-400 dark:bg-zinc-600 mb-2"></div>
               <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">Mark Your Moment.</p>
             </div>
-            <p className="text-zinc-500 text-sm">© 2025 Novari Nigeria. All rights reserved.</p>
+            <p className="text-zinc-500 text-sm">© 2026 Novari Nigeria. All rights reserved.</p>
           </footer>
-
-          <StickyCTA onOrderClick={() => setIsModalOpen(true)} price={content.pricing.currentPrice} />
+          <StickyCTA 
+            onOrderClick={() => setIsModalOpen(true)} 
+            price={content.pricing.currentPrice} 
+            oldPrice={content.pricing.oldPrice} 
+          />
           <WhatsAppFloating whatsappNumber={content.pricing.whatsappNumber} />
           <OrderFormModal 
             isOpen={isModalOpen} 
             onClose={() => setIsModalOpen(false)} 
             whatsappNumber={content.pricing.whatsappNumber} 
-            currentPrice={content.pricing.currentPrice}
+            pricing={content.pricing}
             userLocation={userLocation}
             onCaptureLead={addLead}
           />

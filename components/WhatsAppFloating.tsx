@@ -1,11 +1,21 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface WhatsAppFloatingProps {
   whatsappNumber: string;
 }
 
 const WhatsAppFloating: React.FC<WhatsAppFloatingProps> = ({ whatsappNumber }) => {
+  const [isStickyVisible, setIsStickyVisible] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsStickyVisible(window.scrollY > 500);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const cleanNumber = whatsappNumber.replace(/\D/g, '');
   const finalNumber = cleanNumber.startsWith('0') ? '234' + cleanNumber.substring(1) : cleanNumber;
 
@@ -17,7 +27,9 @@ const WhatsAppFloating: React.FC<WhatsAppFloatingProps> = ({ whatsappNumber }) =
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-[60] flex items-center justify-center w-16 h-16 bg-[#25D366] text-white rounded-full shadow-2xl hover:scale-110 transition-transform md:bottom-10 md:right-10"
+      className={`fixed z-[60] flex items-center justify-center w-16 h-16 bg-[#25D366] text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 right-6 md:bottom-10 md:right-10 ${
+        isStickyVisible ? 'bottom-24 md:bottom-10' : 'bottom-6 md:bottom-10'
+      }`}
       aria-label="Chat with Novari"
     >
       <i className="fa-brands fa-whatsapp text-3xl"></i>
