@@ -148,6 +148,59 @@ const App: React.FC = () => {
   });
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
+  // Pixel Injection Logic
+  useEffect(() => {
+    if (!hasHydrated) return;
+
+    // Facebook Pixel
+    if (content.marketing?.fbPixelId) {
+      const fbScript = document.createElement('script');
+      fbScript.innerHTML = `
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '${content.marketing.fbPixelId}');
+        fbq('track', 'PageView');
+      `;
+      document.head.appendChild(fbScript);
+    }
+
+    // Google Analytics
+    if (content.marketing?.googleAnalyticsId) {
+      const gaScript = document.createElement('script');
+      gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${content.marketing.googleAnalyticsId}`;
+      gaScript.async = true;
+      document.head.appendChild(gaScript);
+
+      const gaConfigScript = document.createElement('script');
+      gaConfigScript.innerHTML = `
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '${content.marketing.googleAnalyticsId}');
+      `;
+      document.head.appendChild(gaConfigScript);
+    }
+
+    // TikTok Pixel
+    if (content.marketing?.ttPixelId) {
+      const ttScript = document.createElement('script');
+      ttScript.innerHTML = `
+        !function (w, d, t) {
+          w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","trackWithContext","setAndTrack"],ttq.setAndTrack=function(t,e){ttq.instances[0].setAndTrack(t,e)};for(var i=0;i<ttq.methods.length;i++)ttq[ttq.methods[i]]=function(s){return function(){ttq.push([s].concat(Array.prototype.slice.call(arguments,0)))}}(ttq.methods[i]);ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=r+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
+          ttq.load('${content.marketing.ttPixelId}');
+          ttq.page();
+        }(window, document, 'ttq');
+      `;
+      document.head.appendChild(ttScript);
+    }
+  }, [hasHydrated, content.marketing]);
+
   useEffect(() => {
     const initAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -170,15 +223,11 @@ const App: React.FC = () => {
 
         if (dbConfig?.content) {
           const remoteContent = dbConfig.content;
-          const localContent = JSON.parse(localStorage.getItem('novari_content_cache') || '{}');
           
-          // Deep Comparison + Timestamp Versioning
           const remoteStr = JSON.stringify(remoteContent);
           const localStr = JSON.stringify(content);
           
           if (remoteStr !== localStr) {
-            // Only update if remote is actually different to prevent flicker
-            // OR if remote is strictly newer than local
             if (!content.lastUpdated || remoteContent.lastUpdated >= content.lastUpdated) {
               setContent(remoteContent);
               try {
@@ -231,7 +280,6 @@ const App: React.FC = () => {
     const syncToDB = async () => {
       setDbSynced(false);
       try {
-        // Double check remote timestamp before pushing to prevent clobbering Device A's work
         const { data: currentRemote } = await supabase
           .from('site_config')
           .select('content')
@@ -241,7 +289,6 @@ const App: React.FC = () => {
         const remoteTimestamp = currentRemote?.content?.lastUpdated || 0;
         
         if (content.lastUpdated < remoteTimestamp) {
-          console.warn("Cloud version is newer. Local sync aborted to prevent data loss.");
           setDbSynced(true);
           return;
         }

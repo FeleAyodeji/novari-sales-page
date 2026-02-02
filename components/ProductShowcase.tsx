@@ -43,7 +43,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({ specs, media }) => {
     return <img src={url} alt="Product view" className={className} loading="lazy" />;
   };
 
-  // Determine what shows in the primary slot (Large)
   const primaryMedia = media.productVideo || media.mainImage;
 
   return (

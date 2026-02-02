@@ -21,13 +21,13 @@ const Hero: React.FC<HeroProps> = ({ timeLeft, onOrderClick, data }) => {
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="flex items-center gap-8 mx-4">
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black flex items-center gap-2">
-                <i className="fa-solid fa-bolt"></i> 50% ANNIVERSARY DISCOUNT
+                <i className="fa-solid fa-bolt"></i> ANNIVERSARY DISCOUNT: 50% OFF TODAY ONLY
               </span>
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black flex items-center gap-2">
-                <i className="fa-solid fa-truck-fast"></i> FREE NATIONWIDE DELIVERY
+                <i className="fa-solid fa-bolt"></i> FREE NATIONWIDE DELIVERY
               </span>
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black flex items-center gap-2">
-                <i className="fa-solid fa-handshake"></i> PAYMENT ON DELIVERY
+                <i className="fa-solid fa-bolt"></i> PAYMENT ON DELIVERY
               </span>
             </div>
           ))}
@@ -49,7 +49,7 @@ const Hero: React.FC<HeroProps> = ({ timeLeft, onOrderClick, data }) => {
 
       <div className="relative z-10 max-w-4xl mx-auto pt-32 px-4">
         <span className="gold-text uppercase tracking-[0.4em] text-[10px] md:text-xs font-black mb-4 block animate-reveal-up stagger-2">
-          ANNIVERSARY DISCOUNT: 50% OFF TODAY ONLY
+          {data.anniversaryOffer || "Anniversary Celebration Offer"}
         </span>
         
         <h1 className="font-serif text-4xl md:text-7xl mb-6 leading-tight tracking-tight text-zinc-900 dark:text-white animate-reveal-up stagger-3">
